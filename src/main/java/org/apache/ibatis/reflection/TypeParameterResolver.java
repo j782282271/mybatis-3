@@ -128,7 +128,7 @@ public class TypeParameterResolver {
 
     /**
      * wildcardType如? extends N
-     * */
+     */
     private static Type resolveWildcardType(WildcardType wildcardType, Type srcType, Class<?> declaringClass) {
         Type[] lowerBounds = resolveWildcardTypeBounds(wildcardType.getLowerBounds(), srcType, declaringClass);
         Type[] upperBounds = resolveWildcardTypeBounds(wildcardType.getUpperBounds(), srcType, declaringClass);
@@ -220,6 +220,10 @@ public class TypeParameterResolver {
                     if (declaredTypeVars[i] == typeVar) {
                         //typeArgs[0]=String class类型
                         if (typeArgs[i] instanceof TypeVariable) {
+                            //本分支以单元测试testReturn_LV2Map为例，Level2Mapper.selectMap方法返回值解析
+                            //第二次进到本函数中时typeArgs[i]=F，declaredTypeVars[i]=typeVar=M，srcType=Level1Mapper<Date, Integer>
+                            //declaringClass=Level0Mapper<L, M, N> ,clazz=Level1Mapper<E, F>，superclass=Level0Mapper<E, F, java.lang.String>
+                            //需要从clazz的F位置定位srcType对应位置为什么，为Integer
                             TypeVariable<?>[] typeParams = clazz.getTypeParameters();
                             for (int j = 0; j < typeParams.length; j++) {
                                 if (typeParams[j] == typeArgs[i]) {
