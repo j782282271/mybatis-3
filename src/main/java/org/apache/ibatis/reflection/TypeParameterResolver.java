@@ -224,6 +224,16 @@ public class TypeParameterResolver {
                             //第二次进到本函数中时typeArgs[i]=F，declaredTypeVars[i]=typeVar=M，srcType=Level1Mapper<Date, Integer>
                             //declaringClass=Level0Mapper<L, M, N> ,clazz=Level1Mapper<E, F>，superclass=Level0Mapper<E, F, java.lang.String>
                             //需要从clazz的F位置定位srcType对应位置为什么，为Integer
+                            //此处图形化解释：
+                            //interface Level2Mapper extends Level1Mapper<Date, Integer>
+                            //                                    ↑srcType
+                            //interface Level1Mapper<E, F> extends Level0Mapper<E, F, String>
+                            //      ↑clazz（typeParams={E,F}）         ↑superclass（也是parentAsType，typeArgs={E,F,String}）
+                            //interface Level0Mapper<L, M, N> { Map<N, M> selectMap(); }
+                            //              ↑declaringClass           ↑typeVar=M
+                            //看上图，此处分支之上的逻辑是这样的：遍历declaringClass，的getTypeParameters，找到和typeVar=M相同的TypeVariable为M，这个M在声明函数中，需要到superclass对应位置i找到F
+                            //发现F为TypeVariable，于是进入到本分支，根据superclass中的F,确定clazz中的F的位置j，srcType中的getActualTypeArguments该位置就是实际类型
+                            //以上过程为M(declaringClass)->F(superclass)->F(clazz)->Integer(srcType)
                             TypeVariable<?>[] typeParams = clazz.getTypeParameters();
                             for (int j = 0; j < typeParams.length; j++) {
                                 if (typeParams[j] == typeArgs[i]) {
