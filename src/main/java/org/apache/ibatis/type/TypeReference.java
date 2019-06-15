@@ -34,7 +34,7 @@ public abstract class TypeReference<T> {
     }
 
     /**
-     * 获取父类的参数理性，父类排除TypeReference
+     * 获取父类的参数类型，父类排除TypeReference
      */
     Type getSuperclassTypeParameter(Class<?> clazz) {
         Type genericSuperclass = clazz.getGenericSuperclass();
