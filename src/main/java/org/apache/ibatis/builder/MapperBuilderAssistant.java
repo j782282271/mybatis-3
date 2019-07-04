@@ -101,13 +101,8 @@ public class MapperBuilderAssistant extends BaseBuilder {
         }
     }
 
-    public Cache useNewCache(Class<? extends Cache> typeClass,
-                             Class<? extends Cache> evictionClass,
-                             Long flushInterval,
-                             Integer size,
-                             boolean readWrite,
-                             boolean blocking,
-                             Properties props) {
+    public Cache useNewCache(Class<? extends Cache> typeClass, Class<? extends Cache> evictionClass,
+                             Long flushInterval, Integer size, boolean readWrite, boolean blocking, Properties props) {
         Cache cache = new CacheBuilder(currentNamespace)
                 .implementation(valueOrDefault(typeClass, PerpetualCache.class))
                 .addDecorator(valueOrDefault(evictionClass, LruCache.class))
@@ -153,13 +148,12 @@ public class MapperBuilderAssistant extends BaseBuilder {
                 .build();
     }
 
-    public ResultMap addResultMap(
-            String id,
-            Class<?> type,
-            String extend,
-            Discriminator discriminator,
-            List<ResultMapping> resultMappings,
-            Boolean autoMapping) {
+    /**
+     * 补全extend中的ResultMapping后，加入到configuration中
+     */
+    public ResultMap addResultMap(String id, Class<?> type,
+                                  String extend, Discriminator discriminator,
+                                  List<ResultMapping> resultMappings, Boolean autoMapping) {
         id = applyCurrentNamespace(id, false);
         extend = applyCurrentNamespace(extend, true);
 
@@ -178,6 +172,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
                     break;
                 }
             }
+            //子含有CONSTRUCTOR，则删除extend的CONSTRUCTOR
             if (declaresConstructor) {
                 Iterator<ResultMapping> extendedResultMappingsIter = extendedResultMappings.iterator();
                 while (extendedResultMappingsIter.hasNext()) {
@@ -186,6 +181,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
                     }
                 }
             }
+            //加入extend的ResultMappings
             resultMappings.addAll(extendedResultMappings);
         }
         ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
@@ -196,27 +192,13 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     public Discriminator buildDiscriminator(
-            Class<?> resultType,
-            String column,
-            Class<?> javaType,
-            JdbcType jdbcType,
-            Class<? extends TypeHandler<?>> typeHandler,
-            Map<String, String> discriminatorMap) {
+            Class<?> resultType, String column, Class<?> javaType, JdbcType jdbcType,
+            Class<? extends TypeHandler<?>> typeHandler, Map<String, String> discriminatorMap) {
         ResultMapping resultMapping = buildResultMapping(
-                resultType,
-                null,
-                column,
-                javaType,
-                jdbcType,
-                null,
-                null,
-                null,
-                null,
-                typeHandler,
-                new ArrayList<ResultFlag>(),
-                null,
-                null,
-                false);
+                resultType, null, column, javaType, jdbcType,
+                null, null, null, null,
+                typeHandler, new ArrayList<ResultFlag>(), null, null, false);
+
         Map<String, String> namespaceDiscriminatorMap = new HashMap<String, String>();
         for (Map.Entry<String, String> e : discriminatorMap.entrySet()) {
             String resultMap = e.getValue();
@@ -339,20 +321,12 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     public ResultMapping buildResultMapping(
-            Class<?> resultType,
-            String property,
-            String column,
-            Class<?> javaType,
-            JdbcType jdbcType,
-            String nestedSelect,
-            String nestedResultMap,
-            String notNullColumn,
-            String columnPrefix,
-            Class<? extends TypeHandler<?>> typeHandler,
-            List<ResultFlag> flags,
-            String resultSet,
-            String foreignColumn,
-            boolean lazy) {
+            Class<?> resultType, String property, String column,
+            Class<?> javaType, JdbcType jdbcType, String nestedSelect,
+            String nestedResultMap, String notNullColumn,
+            String columnPrefix, Class<? extends TypeHandler<?>> typeHandler,
+            List<ResultFlag> flags, String resultSet, String foreignColumn, boolean lazy) {
+
         Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
         TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
         List<ResultMapping> composites = parseCompositeColumnName(column);
@@ -437,7 +411,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return javaType;
     }
 
-    /** Backward compatibility signature */
+    /**
+     * Backward compatibility signature
+     */
     public ResultMapping buildResultMapping(
             Class<?> resultType,
             String property,
@@ -464,7 +440,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return configuration.getLanguageRegistry().getDriver(langClass);
     }
 
-    /** Backward compatibility signature */
+    /**
+     * Backward compatibility signature
+     */
     public MappedStatement addMappedStatement(
             String id,
             SqlSource sqlSource,

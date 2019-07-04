@@ -95,6 +95,7 @@ public class XMLMapperBuilder extends BaseBuilder {
             builderAssistant.setCurrentNamespace(namespace);
             cacheRefElement(context.evalNode("cache-ref"));
             cacheElement(context.evalNode("cache"));
+            //parameterMap即将废弃
             parameterMapElement(context.evalNodes("/mapper/parameterMap"));
             resultMapElements(context.evalNodes("/mapper/resultMap"));
             sqlElement(context.evalNodes("/mapper/sql"));
@@ -237,12 +238,10 @@ public class XMLMapperBuilder extends BaseBuilder {
 
     private ResultMap resultMapElement(XNode resultMapNode, List<ResultMapping> additionalResultMappings) throws Exception {
         ErrorContext.instance().activity("processing " + resultMapNode.getValueBasedIdentifier());
-        String id = resultMapNode.getStringAttribute("id",
-                resultMapNode.getValueBasedIdentifier());
-        String type = resultMapNode.getStringAttribute("type",
-                resultMapNode.getStringAttribute("ofType",
-                        resultMapNode.getStringAttribute("resultType",
-                                resultMapNode.getStringAttribute("javaType"))));
+        String id = resultMapNode.getStringAttribute("id", resultMapNode.getValueBasedIdentifier());
+        String type = resultMapNode.getStringAttribute("type", resultMapNode.getStringAttribute("ofType",
+                resultMapNode.getStringAttribute("resultType", resultMapNode.getStringAttribute("javaType"))));
+
         String extend = resultMapNode.getStringAttribute("extends");
         Boolean autoMapping = resultMapNode.getBooleanAttribute("autoMapping");
         Class<?> typeClass = resolveClass(type);
@@ -273,6 +272,10 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
 
     private void processConstructorElement(XNode resultChild, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
+//        <constructor>
+//            <idArg></idArg>
+//            <arg></arg>
+//        </constructor>
         List<XNode> argChildren = resultChild.getChildren();
         for (XNode argChild : argChildren) {
             List<ResultFlag> flags = new ArrayList<ResultFlag>();

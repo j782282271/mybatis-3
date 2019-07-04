@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
+ * 调用入口为SqlSessionFactoryBuilder.build()
+ *
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {
@@ -127,8 +129,9 @@ public abstract class BaseBuilder {
         if (type != null && !TypeHandler.class.isAssignableFrom(type)) {
             throw new BuilderException("Type " + type.getName() + " is not a valid TypeHandler because it does not implement TypeHandler interface");
         }
-        @SuppressWarnings("unchecked") // already verified it is a TypeHandler
-                Class<? extends TypeHandler<?>> typeHandlerType = (Class<? extends TypeHandler<?>>) type;
+        // already verified it is a TypeHandler
+        @SuppressWarnings("unchecked")
+        Class<? extends TypeHandler<?>> typeHandlerType = (Class<? extends TypeHandler<?>>) type;
         return resolveTypeHandler(javaType, typeHandlerType);
     }
 

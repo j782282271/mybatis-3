@@ -41,6 +41,8 @@ import java.io.Reader;
 import java.util.Properties;
 
 /**
+ * 从mybatis配置文件的根节点configuration开始解析
+ *
  * @author Clinton Begin
  */
 public class XMLConfigBuilder extends BaseBuilder {
@@ -92,6 +94,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         return configuration;
     }
 
+    /**
+     * 从mybatis配置文件的根节点configuration开始解析
+     */
     private void parseConfiguration(XNode root) {
         try {
             Properties settings = settingsAsPropertiess(root.evalNode("settings"));
