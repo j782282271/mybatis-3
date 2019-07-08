@@ -35,6 +35,9 @@ import java.util.Locale;
 public class XMLStatementBuilder extends BaseBuilder {
 
     private MapperBuilderAssistant builderAssistant;
+    /**
+     * 整个select(insert...)标签节点
+     */
     private XNode context;
     private String requiredDatabaseId;
 
@@ -80,6 +83,7 @@ public class XMLStatementBuilder extends BaseBuilder {
         boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
         // Include Fragments before parsing
+        //替换sql
         XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
         includeParser.applyIncludes(context.getNode());
 
@@ -127,6 +131,11 @@ public class XMLStatementBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * @param id                 selectKey的id为parentId + SelectKeyGenerator.SELECT_KEY_SUFFIX
+     * @param nodeToHandle       selectKey的node
+     * @param parameterTypeClass sql的一个熟属性
+     */
     private void parseSelectKeyNode(String id, XNode nodeToHandle, Class<?> parameterTypeClass, LanguageDriver langDriver, String databaseId) {
         String resultType = nodeToHandle.getStringAttribute("resultType");
         Class<?> resultTypeClass = resolveClass(resultType);
@@ -189,6 +198,9 @@ public class XMLStatementBuilder extends BaseBuilder {
         return true;
     }
 
+    /**
+     * 默认XMLLanguageDriver
+     */
     private LanguageDriver getLanguageDriver(String lang) {
         Class<?> langClass = null;
         if (lang != null) {
@@ -196,5 +208,4 @@ public class XMLStatementBuilder extends BaseBuilder {
         }
         return builderAssistant.getLanguageDriver(langClass);
     }
-
 }
