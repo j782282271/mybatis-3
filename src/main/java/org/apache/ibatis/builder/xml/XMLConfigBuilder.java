@@ -119,6 +119,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 解析setting标签，为Properties，setting为mybatis的全局配置
+     */
     private Properties settingsAsPropertiess(XNode context) {
         if (context == null) {
             return new Properties();
@@ -134,6 +137,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         return props;
     }
 
+    /**
+     * 设置configuration的vfs
+     */
     private void loadCustomVfs(Properties props) throws ClassNotFoundException {
         String value = props.getProperty("vfsImpl");
         if (value != null) {
@@ -146,6 +152,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 注册别名
+     */
     private void typeAliasesElement(XNode parent) {
         if (parent != null) {
             for (XNode child : parent.getChildren()) {
@@ -170,6 +179,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 解析插件到configuration中
+     */
     private void pluginElement(XNode parent) throws Exception {
         if (parent != null) {
             for (XNode child : parent.getChildren()) {
@@ -182,6 +194,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * configuration.setObjectFactory
+     */
     private void objectFactoryElement(XNode context) throws Exception {
         if (context != null) {
             String type = context.getStringAttribute("type");
@@ -192,6 +207,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * configuration.setObjectWrapperFactory
+     */
     private void objectWrapperFactoryElement(XNode context) throws Exception {
         if (context != null) {
             String type = context.getStringAttribute("type");
@@ -200,6 +218,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * configuration.setReflectorFactory
+     */
     private void reflectionFactoryElement(XNode context) throws Exception {
         if (context != null) {
             String type = context.getStringAttribute("type");
@@ -208,6 +229,10 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 解析config文件中的Properties放到configuration中，configuration已有的同名属性不会被覆盖
+     * properties用于变量替换，setting用于全局配置mybatis
+     */
     private void propertiesElement(XNode context) throws Exception {
         if (context != null) {
             Properties defaults = context.getChildrenAsProperties();
@@ -230,6 +255,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * props为setting标签中解析出来的属性
+     */
     private void settingsElement(Properties props) throws Exception {
         configuration.setAutoMappingBehavior(AutoMappingBehavior.valueOf(props.getProperty("autoMappingBehavior", "PARTIAL")));
         configuration.setAutoMappingUnknownColumnBehavior(AutoMappingUnknownColumnBehavior.valueOf(props.getProperty("autoMappingUnknownColumnBehavior", "NONE")));
@@ -256,6 +284,10 @@ public class XMLConfigBuilder extends BaseBuilder {
         configuration.setConfigurationFactory(resolveClass(props.getProperty("configurationFactory")));
     }
 
+    /**
+     * 获取默认environment，设置this.environment字段
+     * 解析Environment放置到configuration中
+     */
     private void environmentsElement(XNode context) throws Exception {
         if (context != null) {
             if (environment == null) {
@@ -276,6 +308,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 解析databaseId，存储到configuration中
+     */
     private void databaseIdProviderElement(XNode context) throws Exception {
         DatabaseIdProvider databaseIdProvider = null;
         if (context != null) {
@@ -317,6 +352,10 @@ public class XMLConfigBuilder extends BaseBuilder {
         throw new BuilderException("Environment declaration requires a DataSourceFactory.");
     }
 
+    /**
+     * 解析typeHandler，并存储到this.typeHandlerRegistry
+     * configuration也引用了同一个typeHandlerRegistry
+     */
     private void typeHandlerElement(XNode parent) throws Exception {
         if (parent != null) {
             for (XNode child : parent.getChildren()) {
@@ -344,6 +383,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
     }
 
+    /**
+     * 解析加载mapper文件，并使用XMLMapperBuilder解析其内容
+     */
     private void mapperElement(XNode parent) throws Exception {
         if (parent != null) {
             for (XNode child : parent.getChildren()) {
