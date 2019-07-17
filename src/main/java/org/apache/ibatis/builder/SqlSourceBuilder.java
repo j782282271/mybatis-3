@@ -39,10 +39,17 @@ public class SqlSourceBuilder extends BaseBuilder {
         super(configuration);
     }
 
+    /**
+     * @param originalSql          经过sqlNode.apply处理过的sql，即DynamicContext.getSql()，其中含有#{},例：
+     *                             #{_frc_item_0,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}，
+     * @param parameterType        用户传入的实际参数类型
+     * @param additionalParameters 运行时参数，即context.getBindings(),其中有_frc_item_0的对应项
+     */
     public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
         ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
         GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
         String sql = parser.parse(originalSql);
+        //sql中的#{}被替换为？。handler.getParameterMappings()中对应着？位置的参数
         return new StaticSqlSource(configuration, sql, handler.getParameterMappings());
     }
 
@@ -62,6 +69,9 @@ public class SqlSourceBuilder extends BaseBuilder {
             return parameterMappings;
         }
 
+        /**
+         * #{}位置全部替换为?，#{}内部的参数经过buildParameterMapping转为ParameterMapping，add到list中
+         */
         @Override
         public String handleToken(String content) {
             parameterMappings.add(buildParameterMapping(content));

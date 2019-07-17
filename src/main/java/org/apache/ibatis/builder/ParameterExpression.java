@@ -19,7 +19,7 @@ import java.util.HashMap;
 
 /**
  * Inline parameter expression parser. Supported grammar (simplified):
- *
+ * <p>
  * <pre>
  * inline-parameter = (propertyName | expression) oldJdbcType attributes
  * propertyName = /expression language's property navigation path/
@@ -28,6 +28,7 @@ import java.util.HashMap;
  * attributes = (',' attribute)*
  * attribute = name '=' value
  * </pre>
+ * 构造参数为，#{}内的string,该String可能被改造过(即不是map中直接配置的，如foreach节点)，将其中的内容转为map
  *
  * @author Frank D. Martinez [mnesarco]
  */
@@ -37,6 +38,10 @@ public class ParameterExpression extends HashMap<String, String> {
 
     public ParameterExpression(String expression) {
         parse(expression);
+    }
+
+    public static void main(String[] args) {
+        ParameterExpression expression = new ParameterExpression("_frc_item_0,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler");
     }
 
     private void parse(String expression) {
@@ -71,6 +76,9 @@ public class ParameterExpression extends HashMap<String, String> {
         }
     }
 
+    /**
+     * skip white space
+     */
     private int skipWS(String expression, int p) {
         for (int i = p; i < expression.length(); i++) {
             if (expression.charAt(i) > 0x20) {

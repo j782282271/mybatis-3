@@ -52,9 +52,12 @@ public class XMLScriptBuilder extends BaseBuilder {
         List<SqlNode> contents = parseDynamicTags(context);
         MixedSqlNode rootSqlNode = new MixedSqlNode(contents);
         SqlSource sqlSource = null;
+        //节点只含#{}不含${}则不是动态sql
         if (isDynamic) {
+            //需要解析${}
             sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
         } else {
+            //不需要解析${}，所以需要
             sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
         }
         return sqlSource;
