@@ -68,14 +68,22 @@ public class DefaultResultSetHandler implements ResultSetHandler {
      */
     private final Map<CacheKey, Object> nestedResultObjects = new HashMap<CacheKey, Object>();
     /**
-     * 用于处理：循环引用key:resultMapId
+     * 用于处理：循环引用key:resultapId
      */
     private final Map<String, Object> ancestorObjects = new HashMap<String, Object>();
     private final Map<String, String> ancestorColumnPrefix = new HashMap<String, String>();
     private Object previousRowValue;
 
-    // multiple resultsets
+    /**
+     * 多结果集相关
+     * <association  property ="author" JavaType ="Author" resultSet ="authors" column ="author_ id" foreignColumn ="id" >
+     * 其中key为resultSet的值
+     */
     private final Map<String, ResultMapping> nextResultMaps = new HashMap<String, ResultMapping>();
+
+    /**
+     * 多结果集相关
+     */
     private final Map<CacheKey, List<PendingRelation>> pendingRelations = new HashMap<CacheKey, List<PendingRelation>>();
 
     // Cached Automappings
@@ -153,9 +161,6 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
     }
 
-    //
-    // HANDLE RESULT SETS
-    //
     @Override
     public List<Object> handleResultSets(Statement stmt) throws SQLException {
         ErrorContext.instance().activity("handling results").object(mappedStatement.getId());
@@ -176,9 +181,11 @@ public class DefaultResultSetHandler implements ResultSetHandler {
             resultSetCount++;
         }
 
+        //多结果集处理
         String[] resultSets = mappedStatement.getResultSets();
         if (resultSets != null) {
             while (rsw != null && resultSetCount < resultSets.length) {
+                //resultSetCount < resultSets.length说明仍有resultSet未处理
                 ResultMapping parentMapping = nextResultMaps.get(resultSets[resultSetCount]);
                 if (parentMapping != null) {
                     String nestedResultMapId = parentMapping.getNestedResultMapId();
@@ -194,6 +201,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         return collapseSingleResultList(multipleResults);
     }
 
+    /**
+     * 暂时没看
+     */
     @Override
     public <E> Cursor<E> handleCursorResultSets(Statement stmt) throws SQLException {
         ErrorContext.instance().activity("handling cursor results").object(mappedStatement.getId());
@@ -291,10 +301,6 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     private List<Object> collapseSingleResultList(List<Object> multipleResults) {
         return multipleResults.size() == 1 ? (List<Object>) multipleResults.get(0) : multipleResults;
     }
-
-    //
-    // HANDLE ROWS FOR SIMPLE RESULTMAP
-    //
 
     public void handleRowValues(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
         if (resultMap.hasNestedResultMaps()) {
@@ -448,6 +454,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         if (propertyMapping.getNestedQueryId() != null) {
             return getNestedQueryMappingValue(rs, metaResultObject, propertyMapping, lazyLoader, columnPrefix);
         } else if (propertyMapping.getResultSet() != null) {
+            //多结果集处理，指定了resultSet的propertyMapping
             addPendingChildRelation(rs, metaResultObject, propertyMapping);   // TODO is that OK?
             return DEFERED;
         } else {
@@ -536,6 +543,14 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
     }
 
+    /**
+     * 添加到多结果集中，等到处理下一个sql语句时会使用
+     *
+     * @param rs
+     * @param metaResultObject
+     * @param parentMapping    指定了resultSet的parentMapping，类似于：<association  property ="author" JavaType ="Author" resultSet ="authors" column ="author_ id" foreignColumn ="id" >
+     * @throws SQLException
+     */
     private void addPendingChildRelation(ResultSet rs, MetaObject metaResultObject, ResultMapping parentMapping) throws SQLException {
         CacheKey cacheKey = createKeyForMultipleResults(rs, parentMapping, parentMapping.getColumn(), parentMapping.getColumn());
         PendingRelation deferLoad = new PendingRelation();
@@ -574,10 +589,6 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
         return cacheKey;
     }
-
-    //
-    // INSTANTIATION & CONSTRUCTOR MAPPING
-    //
 
     private Object createResultObject(ResultSetWrapper rsw, ResultMap resultMap, ResultLoaderMap lazyLoader, String columnPrefix) throws SQLException {
         //记录构造函数参数类型
@@ -700,10 +711,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         return typeHandler.getResult(rsw.getResultSet(), columnName);
     }
 
-    //
-    // NESTED QUERY
-    //
-
+    /**
+     * 处于构造参数中的嵌套查询
+     */
     private Object getNestedQueryConstructorValue(ResultSet rs, ResultMapping constructorMapping, String columnPrefix) throws SQLException {
         final String nestedQueryId = constructorMapping.getNestedQueryId();
         final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
@@ -715,6 +725,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
             final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
             final Class<?> targetType = constructorMapping.getJavaType();
             final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
+            //构造函数中的嵌套查询，不会延迟加载，会立即加载
             value = resultLoader.loadResult();
         }
         return value;
@@ -738,9 +749,11 @@ public class DefaultResultSetHandler implements ResultSetHandler {
             } else {
                 final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
                 if (propertyMapping.isLazy()) {
+                    //延迟加载，但是返回DEFERED对象
                     lazyLoader.addLoader(property, metaResultObject, resultLoader);
                     value = DEFERED;
                 } else {
+                    //没有配置延迟加载，则立即加载
                     value = resultLoader.loadResult();
                 }
             }
