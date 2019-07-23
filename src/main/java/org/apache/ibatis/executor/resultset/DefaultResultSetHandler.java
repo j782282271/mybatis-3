@@ -122,19 +122,19 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         this.resultHandler = resultHandler;
     }
 
-    //
-    // HANDLE OUTPUT PARAMETER
-    //
-
     @Override
     public void handleOutputParameters(CallableStatement cs) throws SQLException {
+        //用户输入参数
         final Object parameterObject = parameterHandler.getParameterObject();
         final MetaObject metaParam = configuration.newMetaObject(parameterObject);
+        //参数信息
         final List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
         for (int i = 0; i < parameterMappings.size(); i++) {
             final ParameterMapping parameterMapping = parameterMappings.get(i);
+            //输出类型参数
             if (parameterMapping.getMode() == ParameterMode.OUT || parameterMapping.getMode() == ParameterMode.INOUT) {
                 if (ResultSet.class.equals(parameterMapping.getJavaType())) {
+                    //参数类型为ResultSet，需要进行映射
                     handleRefCursorOutputParameter((ResultSet) cs.getObject(i + 1), parameterMapping, metaParam);
                 } else {
                     final TypeHandler<?> typeHandler = parameterMapping.getTypeHandler();
@@ -144,6 +144,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
     }
 
+    /**
+     * 处理ResultSet与ResultMap之间的映射
+     * 将映射得到的结果对象，放到parameterObject中
+     */
     private void handleRefCursorOutputParameter(ResultSet rs, ParameterMapping parameterMapping, MetaObject metaParam) throws SQLException {
         if (rs == null) {
             return;
