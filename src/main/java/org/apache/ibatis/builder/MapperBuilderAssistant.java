@@ -364,6 +364,20 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return columns;
     }
 
+    /**
+     * <resultMap id="blogResult" type="Blog">
+     * *** <association property="author" column="{id=author_id,likename=author_name}" javaType="Author" select="selectAuthor"/>
+     * </resultMap>
+     * ************
+     * <select id="selectBlog" resultMap="blogResult" parameterType="java.lang.String">
+     * ***SELECT author_id,author_name FROM BLOG WHERE ID = #{id}
+     * </select>
+     * ************
+     * <select id="selectAuthor" resultType="Author" parameterType="java.util.HashMap">
+     * ***SELECT * FROM AUTHOR WHERE 1=1 and ID = #{id} and name like CONCAT('%',#{likename},'%')
+     * </select>
+     * 以上，column="{id=author_id,likename=author_name}"为CompositeColumn，如果只有一列如column="author_id",则不是compositeColumn
+     */
     private List<ResultMapping> parseCompositeColumnName(String columnName) {
         List<ResultMapping> composites = new ArrayList<ResultMapping>();
         if (columnName != null && (columnName.indexOf('=') > -1 || columnName.indexOf(',') > -1)) {

@@ -37,11 +37,11 @@ public class ResultSetWrapper {
     private final List<JdbcType> jdbcTypes = new ArrayList<JdbcType>();
     private final Map<String/**列名*/, Map<Class<?>, TypeHandler<?>>> typeHandlerMap = new HashMap<String, Map<Class<?>, TypeHandler<?>>>();
     /**
-     * 被映射的列名，key为resultMap对象的id，value为列名集合
+     * 被映射的列名，key为resultMap对象的id+:+prefix，value为列名集合,不含前缀
      */
     private Map<String, List<String>> mappedColumnNamesMap = new HashMap<String, List<String>>();
     /**
-     * 未被映射的列名，key为resultMap对象的id，value为列名集合
+     * 未被映射的列名，key为resultMap对象的id+:+prefix，value为列名集合,不含前缀
      */
     private Map<String, List<String>> unMappedColumnNamesMap = new HashMap<String, List<String>>();
 

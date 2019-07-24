@@ -207,6 +207,9 @@ public class Configuration {
         }
     }
 
+    /**
+     * 该值为true，如果为某一个ResultType中的所有属性赋值都为null，也认为赋值成功了
+     */
     public boolean isCallSettersOnNulls() {
         return callSettersOnNulls;
     }
