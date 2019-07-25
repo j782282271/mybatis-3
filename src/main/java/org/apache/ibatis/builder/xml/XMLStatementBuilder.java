@@ -99,8 +99,10 @@ public class XMLStatementBuilder extends BaseBuilder {
         String keyStatementId = id + SelectKeyGenerator.SELECT_KEY_SUFFIX;
         keyStatementId = builderAssistant.applyCurrentNamespace(keyStatementId, true);
         if (configuration.hasKeyGenerator(keyStatementId)) {
+            //sql节点存在<selectKey>
             keyGenerator = configuration.getKeyGenerator(keyStatementId);
         } else {
+            //没配置<selectKey>则根据sql节点下的useGeneratedKeys属性值判断使用是否Jdbc3KeyGenerator
             keyGenerator = context.getBooleanAttribute("useGeneratedKeys",
                     configuration.isUseGeneratedKeys() && SqlCommandType.INSERT.equals(sqlCommandType))
                     ? new Jdbc3KeyGenerator() : new NoKeyGenerator();
