@@ -61,6 +61,9 @@ public class SimpleStatementHandler extends BaseStatementHandler {
         return rows;
     }
 
+    /**
+     * Statement中可以添加不同模式的sql，但是每添加一个新的sql语句都会触发一次编译操作
+     */
     @Override
     public void batch(Statement statement) throws SQLException {
         String sql = boundSql.getSql();

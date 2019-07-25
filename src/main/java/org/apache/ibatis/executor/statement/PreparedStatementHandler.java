@@ -47,6 +47,11 @@ public class PreparedStatementHandler extends BaseStatementHandler {
         return rows;
     }
 
+    /**
+     * PreparedStatement中只能添加一种模式的sql，只会触发一次编译操作，但是可以绑定多组不同实参，实现批处理
+     * PreparedStatement.addbatch方法的使用说明,见：
+     * https://www.cnblogs.com/liqiu/p/3825544.html
+     */
     @Override
     public void batch(Statement statement) throws SQLException {
         PreparedStatement ps = (PreparedStatement) statement;

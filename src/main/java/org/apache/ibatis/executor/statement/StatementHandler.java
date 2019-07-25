@@ -31,7 +31,7 @@ import java.util.List;
 public interface StatementHandler {
 
     /**
-     * 从连接中获取Statement
+     * 结合this和conn创建Statement
      */
     Statement prepare(Connection connection, Integer transactionTimeout) throws SQLException;
 
