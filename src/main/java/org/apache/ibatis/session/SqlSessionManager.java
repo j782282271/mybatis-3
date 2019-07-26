@@ -37,6 +37,9 @@ public class SqlSessionManager implements SqlSessionFactory, SqlSession {
     private final SqlSessionFactory sqlSessionFactory;
     private final SqlSession sqlSessionProxy;
 
+    /**
+     * 线程与SqlSession的绑定关系
+     */
     private ThreadLocal<SqlSession> localSqlSession = new ThreadLocal<SqlSession>();
 
     private SqlSessionManager(SqlSessionFactory sqlSessionFactory) {
@@ -337,6 +340,10 @@ public class SqlSessionManager implements SqlSessionFactory, SqlSession {
         }
     }
 
+    /**
+     * 使用ThreadLocal中的SqlSession执行真正的工作，避免每个线程创建一个连接
+     * 如果ThreadLocal中无当前线程的SqlSession，则使用sqlSessionFactory创建SqlSession，使用完则关闭
+     */
     private class SqlSessionInterceptor implements InvocationHandler {
         public SqlSessionInterceptor() {
             // Prevent Synthetic Access

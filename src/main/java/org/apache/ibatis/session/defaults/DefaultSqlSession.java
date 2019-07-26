@@ -36,7 +36,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- *
  * The default implementation for {@link SqlSession}.
  * Note that this class is not Thread-Safe.
  *
@@ -48,7 +47,15 @@ public class DefaultSqlSession implements SqlSession {
     private Executor executor;
 
     private boolean autoCommit;
+    /**
+     * 当前缓存是否有脏数据，即是否有未commit的update
+     */
     private boolean dirty;
+    /**
+     * 记录本SqlSession创建过的游标对象
+     * 防止用户忘记关闭Cursor对象
+     * 在this.closeCursors会关闭所有Cursor对象
+     */
     private List<Cursor<?>> cursorList;
 
     public DefaultSqlSession(Configuration configuration, Executor executor, boolean autoCommit) {
@@ -118,6 +125,7 @@ public class DefaultSqlSession implements SqlSession {
         try {
             MappedStatement ms = configuration.getMappedStatement(statement);
             Cursor<T> cursor = executor.queryCursor(ms, wrapCollection(parameter), rowBounds);
+            //保存自己创建过的Cursor，关闭时，关闭这些Cursor，防止用户忘记关闭
             registerCursor(cursor);
             return cursor;
         } catch (Exception e) {
@@ -186,6 +194,9 @@ public class DefaultSqlSession implements SqlSession {
         return update(statement, null);
     }
 
+    /**
+     * 执行完更新标识dirty = true
+     */
     @Override
     public int update(String statement, Object parameter) {
         try {
@@ -309,10 +320,17 @@ public class DefaultSqlSession implements SqlSession {
         cursorList.add(cursor);
     }
 
+    /**
+     * 非自动提交，且有update没提交则返回true
+     */
     private boolean isCommitOrRollbackRequired(boolean force) {
         return (!autoCommit && dirty) || force;
     }
 
+    /**
+     * 如果参数为集合或者数组类型将参数装入map
+     * 否则直接返回参数
+     */
     private Object wrapCollection(final Object object) {
         if (object instanceof Collection) {
             StrictMap<Object> map = new StrictMap<Object>();
@@ -333,6 +351,9 @@ public class DefaultSqlSession implements SqlSession {
 
         private static final long serialVersionUID = -5741767162221585340L;
 
+        /**
+         * 不含key则抛异常
+         */
         @Override
         public V get(Object key) {
             if (!super.containsKey(key)) {
@@ -340,7 +361,5 @@ public class DefaultSqlSession implements SqlSession {
             }
             return super.get(key);
         }
-
     }
-
 }

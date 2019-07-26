@@ -30,7 +30,7 @@ import java.sql.SQLException;
 /**
  * @author Clinton Begin
  */
-public class DefaultSqlSessionFactory implements SqlSessionFactory {
+public class    DefaultSqlSessionFactory implements SqlSessionFactory {
 
     private final Configuration configuration;
 
@@ -83,22 +83,33 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
         return configuration;
     }
 
+    /**
+     * 根据ds创建SqlSession
+     */
     private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
         Transaction tx = null;
         try {
             final Environment environment = configuration.getEnvironment();
+            //从environment中获取事务工厂
             final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
+            //事务工厂根据environment.getDataSource()等参数创建Transaction
             tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
+            //使用Transaction和提交类型创建Executor
             final Executor executor = configuration.newExecutor(tx, execType);
+            //使用Executor创建DefaultSqlSession
             return new DefaultSqlSession(configuration, executor, autoCommit);
         } catch (Exception e) {
-            closeTransaction(tx); // may have fetched a connection so lets call close()
+            // may have fetched a connection so lets call close()
+            closeTransaction(tx);
             throw ExceptionFactory.wrapException("Error opening session.  Cause: " + e, e);
         } finally {
             ErrorContext.instance().reset();
         }
     }
 
+    /**
+     * 根据conn创建SqlSession
+     */
     private SqlSession openSessionFromConnection(ExecutorType execType, Connection connection) {
         try {
             boolean autoCommit;
@@ -121,6 +132,9 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
         }
     }
 
+    /**
+     * 从environment中创建事务工厂
+     */
     private TransactionFactory getTransactionFactoryFromEnvironment(Environment environment) {
         if (environment == null || environment.getTransactionFactory() == null) {
             return new ManagedTransactionFactory();
