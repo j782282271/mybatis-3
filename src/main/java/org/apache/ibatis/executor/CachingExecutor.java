@@ -29,7 +29,11 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * 二级缓存
+ * 二级缓存，生命周期与app应用周期相同
+ * 配置项：
+ * 总开关：setting cacheEnabled属性
+ * mapper中的<cache>、<cache-ref>节点
+ * select节点中的useCache属性
  *
  * @author Clinton Begin
  * @author Eduardo Macarron
@@ -90,10 +94,13 @@ public class CachingExecutor implements Executor {
     @Override
     public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
             throws SQLException {
+        //ms中指定的cache二级缓存对象
         Cache cache = ms.getCache();
         if (cache != null) {
+            //cache不为空，从缓存中查
             flushCacheIfRequired(ms);
             if (ms.isUseCache() && resultHandler == null) {
+                //二级缓存不能缓存输出参数，如果包含输出参数的存储过程走到了此处则报错
                 ensureNoOutParams(ms, parameterObject, boundSql);
                 @SuppressWarnings("unchecked")
                 List<E> list = (List<E>) tcm.getObject(cache, key);
@@ -104,6 +111,7 @@ public class CachingExecutor implements Executor {
                 return list;
             }
         }
+        //未开启二级缓存，直接查库
         return delegate.<E>query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
     }
 
@@ -129,6 +137,9 @@ public class CachingExecutor implements Executor {
         }
     }
 
+    /**
+     * 确保没有输出参数
+     */
     private void ensureNoOutParams(MappedStatement ms, Object parameter, BoundSql boundSql) {
         if (ms.getStatementType() == StatementType.CALLABLE) {
             for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {
@@ -159,6 +170,9 @@ public class CachingExecutor implements Executor {
         delegate.clearLocalCache();
     }
 
+    /**
+     * 根据ms中的配置（select节点的配置属性）决定是否清空缓存
+     */
     private void flushCacheIfRequired(MappedStatement ms) {
         Cache cache = ms.getCache();
         if (cache != null && ms.isFlushCacheRequired()) {

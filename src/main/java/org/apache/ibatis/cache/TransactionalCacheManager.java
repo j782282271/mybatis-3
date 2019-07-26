@@ -25,6 +25,10 @@ import java.util.Map;
  */
 public class TransactionalCacheManager {
 
+    /**
+     * key为CachingExecutor中使用的二级缓存对象
+     * value为TransactionalCache，value中封装的二级缓存对象就是这个key
+     */
     private Map<Cache, TransactionalCache> transactionalCaches = new HashMap<Cache, TransactionalCache>();
 
     public void clear(Cache cache) {
