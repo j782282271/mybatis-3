@@ -45,6 +45,9 @@ public class XPathParser {
     private boolean validation;
     private EntityResolver entityResolver;
     private Properties variables;
+    /**
+     * 用于解析Document
+     */
     private XPath xpath;
 
     /**

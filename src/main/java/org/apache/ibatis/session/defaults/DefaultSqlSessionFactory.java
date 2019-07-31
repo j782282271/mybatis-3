@@ -30,7 +30,7 @@ import java.sql.SQLException;
 /**
  * @author Clinton Begin
  */
-public class    DefaultSqlSessionFactory implements SqlSessionFactory {
+public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
     private final Configuration configuration;
 

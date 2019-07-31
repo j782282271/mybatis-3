@@ -34,6 +34,9 @@ import java.util.Locale;
  */
 public class XMLStatementBuilder extends BaseBuilder {
 
+    /**
+     * XMLMapperBuilder中创建的MapperBuilderAssistant传到此处
+     */
     private MapperBuilderAssistant builderAssistant;
     /**
      * 整个select(insert...)标签节点
@@ -83,11 +86,12 @@ public class XMLStatementBuilder extends BaseBuilder {
         boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
         // Include Fragments before parsing
-        //替换sql
+        //替换当前select(or update)语句中的include sql（<include refid="baseSql"/>）为真正的sql，并替换其中的${                     }
         XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
         includeParser.applyIncludes(context.getNode());
 
         // Parse selectKey after includes and remove them.
+        //创建selectKey对应的keyGenerator，并加入到configuration.keyGenerators中，mysql不需要配置keyGenerator，可以自动生成key
         processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
         // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
@@ -120,6 +124,7 @@ public class XMLStatementBuilder extends BaseBuilder {
             parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, configuration.getDatabaseId());
         }
         parseSelectKeyNodes(id, selectKeyNodes, parameterTypeClass, langDriver, null);
+        //移除selectKey节点
         removeSelectKeyNodes(selectKeyNodes);
     }
 
@@ -136,7 +141,7 @@ public class XMLStatementBuilder extends BaseBuilder {
     /**
      * @param id                 selectKey的id为parentId + SelectKeyGenerator.SELECT_KEY_SUFFIX
      * @param nodeToHandle       selectKey的node
-     * @param parameterTypeClass sql的一个熟属性
+     * @param parameterTypeClass select sql的一个属性:查询参数的类型
      */
     private void parseSelectKeyNode(String id, XNode nodeToHandle, Class<?> parameterTypeClass, LanguageDriver langDriver, String databaseId) {
         String resultType = nodeToHandle.getStringAttribute("resultType");
@@ -186,7 +191,6 @@ public class XMLStatementBuilder extends BaseBuilder {
             if (databaseId != null) {
                 return false;
             }
-            //databaseId与requiredDatabaseId都为null,会走到此处
             // skip this statement if there is a previous one with a not null databaseId
             id = builderAssistant.applyCurrentNamespace(id, false);
             if (this.configuration.hasStatement(id, false)) {

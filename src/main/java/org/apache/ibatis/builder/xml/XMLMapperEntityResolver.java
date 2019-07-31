@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.Locale;
 
 /**
+ * 验证xml的合法性，不需要联网，直接用本地的dtd文件验证即可
  * Offline entity resolver for the MyBatis DTDs
  *
  * @author Clinton Begin

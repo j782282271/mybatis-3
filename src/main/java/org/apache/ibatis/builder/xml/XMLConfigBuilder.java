@@ -42,6 +42,8 @@ import java.util.Properties;
 
 /**
  * 从mybatis配置文件的根节点configuration开始解析
+ * configuration中涉及到的mapper文件的解析交由XMLMapperBuiler解析
+ * 解析出configuration，供给SqlSessionFactoryBuilder使用
  *
  * @author Clinton Begin
  */
@@ -101,7 +103,9 @@ public class XMLConfigBuilder extends BaseBuilder {
         try {
             Properties settings = settingsAsPropertiess(root.evalNode("settings"));
             //issue #117 read properties first
+            //解析出来的变量设置到parser和configuration中
             propertiesElement(root.evalNode("properties"));
+            //configuration.setVfsImpl
             loadCustomVfs(settings);
             typeAliasesElement(root.evalNode("typeAliases"));
             pluginElement(root.evalNode("plugins"));
@@ -160,6 +164,7 @@ public class XMLConfigBuilder extends BaseBuilder {
             for (XNode child : parent.getChildren()) {
                 if ("package".equals(child.getName())) {
                     String typeAliasPackage = child.getStringAttribute("name");
+                    //configuration.getTypeAliasRegistry()和this.typeAliasRegistry是同一引用
                     configuration.getTypeAliasRegistry().registerAliases(typeAliasPackage);
                 } else {
                     String alias = child.getStringAttribute("alias");
@@ -250,6 +255,7 @@ public class XMLConfigBuilder extends BaseBuilder {
             if (vars != null) {
                 defaults.putAll(vars);
             }
+            //设置到parser中，用于${}变量替换
             parser.setVariables(defaults);
             configuration.setVariables(defaults);
         }
@@ -295,6 +301,7 @@ public class XMLConfigBuilder extends BaseBuilder {
             }
             for (XNode child : context.getChildren()) {
                 String id = child.getStringAttribute("id");
+                //id与this.environment相同
                 if (isSpecifiedEnvironment(id)) {
                     TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
                     DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
@@ -302,6 +309,7 @@ public class XMLConfigBuilder extends BaseBuilder {
                     Environment.Builder environmentBuilder = new Environment.Builder(id)
                             .transactionFactory(txFactory)
                             .dataSource(dataSource);
+                    //env中含有TransactionFactory和dataSource
                     configuration.setEnvironment(environmentBuilder.build());
                 }
             }
@@ -325,6 +333,7 @@ public class XMLConfigBuilder extends BaseBuilder {
         }
         Environment environment = configuration.getEnvironment();
         if (environment != null && databaseIdProvider != null) {
+            //使用databaseIdProvider到ds中生成databaseId,设置到configuration中
             String databaseId = databaseIdProvider.getDatabaseId(environment.getDataSource());
             configuration.setDatabaseId(databaseId);
         }
@@ -385,16 +394,21 @@ public class XMLConfigBuilder extends BaseBuilder {
 
     /**
      * 解析加载mapper文件，并使用XMLMapperBuilder解析其内容
+     * 配置格式见：http://www.mybatis.org/mybatis-3/zh/configuration.html
      */
     private void mapperElement(XNode parent) throws Exception {
         if (parent != null) {
             for (XNode child : parent.getChildren()) {
                 if ("package".equals(child.getName())) {
+                    //<package name="org.mybatis.builder"/>，该包路径下含Mapper java接口，这种解析需要mapper上的注解
                     String mapperPackage = child.getStringAttribute("name");
                     configuration.addMappers(mapperPackage);
                 } else {
+                    //<mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
                     String resource = child.getStringAttribute("resource");
+                    //<mapper url="file:///var/mappers/AuthorMapper.xml"/>
                     String url = child.getStringAttribute("url");
+                    //<mapper class="org.mybatis.builder.AuthorMapper"/>，这种解析需要mapper上的注解
                     String mapperClass = child.getStringAttribute("class");
                     if (resource != null && url == null && mapperClass == null) {
                         ErrorContext.instance().resource(resource);

@@ -31,13 +31,26 @@ import java.io.Reader;
 import java.util.*;
 
 /**
+ * mappep.xml文件会创建一个XMLMapperBuilder，用于解析到configuration中
+ * 本类负责解析resultMap
+ * 至于sql语句交由XMLStatementBuilder解析
+ *
  * @author Clinton Begin
  */
 public class XMLMapperBuilder extends BaseBuilder {
 
     private XPathParser parser;
+    /**
+     * 一个mappep.xml文件会创建一个XMLMapperBuilder，因此MapperBuilderAssistant也是唯一
+     */
     private MapperBuilderAssistant builderAssistant;
+    /**
+     * 与configuration中的sqlFragments是同一引用
+     */
     private Map<String, XNode> sqlFragments;
+    /**
+     * mapper.xml文件名，存储到configuration中用于记录当前mapper是否被解析过
+     */
     private String resource;
 
     @Deprecated
@@ -57,6 +70,11 @@ public class XMLMapperBuilder extends BaseBuilder {
         this.builderAssistant.setCurrentNamespace(namespace);
     }
 
+    /**
+     * @param inputStream  mapper.xml文件输入流
+     * @param resource     文件名
+     * @param sqlFragments 从configuration中获取的sqlFragments
+     */
     public XMLMapperBuilder(InputStream inputStream, Configuration configuration, String resource, Map<String, XNode> sqlFragments) {
         this(new XPathParser(inputStream, true, configuration.getVariables(), new XMLMapperEntityResolver()),
                 configuration, resource, sqlFragments);
@@ -87,7 +105,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     }
 
     /**
-     * 解析mapper节点放置到
+     * 解析mapper节点放到configuration
      */
     private void configurationElement(XNode context) {
         try {
@@ -96,11 +114,14 @@ public class XMLMapperBuilder extends BaseBuilder {
                 throw new BuilderException("Mapper's namespace cannot be empty");
             }
             builderAssistant.setCurrentNamespace(namespace);
+            //解析current cache 放到MapperBuilderAssistant的currentCache字段
             cacheRefElement(context.evalNode("cache-ref"));
             cacheElement(context.evalNode("cache"));
             //parameterMap即将废弃，不看
             parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+            //解析resultMap，放到configuration
             resultMapElements(context.evalNodes("/mapper/resultMap"));
+            //解析sql标签，放到this.sqlFragments中
             sqlElement(context.evalNodes("/mapper/sql"));
             buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
         } catch (Exception e) {
@@ -122,6 +143,7 @@ public class XMLMapperBuilder extends BaseBuilder {
      */
     private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
         for (XNode context : list) {
+            //一个节点创建一个XMLStatementBuilder
             final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
             try {
                 statementParser.parseStatementNode();
@@ -181,9 +203,11 @@ public class XMLMapperBuilder extends BaseBuilder {
      */
     private void cacheRefElement(XNode context) {
         if (context != null) {
+            //currentNamespace-->cacheRef namespace
             configuration.addCacheRef(builderAssistant.getCurrentNamespace(), context.getStringAttribute("namespace"));
             CacheRefResolver cacheRefResolver = new CacheRefResolver(builderAssistant, context.getStringAttribute("namespace"));
             try {
+                //到configuration中找到cacheRef namespace的cache，让currentNamespace-->该cache
                 cacheRefResolver.resolveCacheRef();
             } catch (IncompleteElementException e) {
                 configuration.addIncompleteCacheRef(cacheRefResolver);
@@ -291,14 +315,15 @@ public class XMLMapperBuilder extends BaseBuilder {
         }
     }
 
-    /**
-     * 解析resultMap标签下的constructor标签
-     */
-    private void processConstructorElement(XNode resultChild, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
 //        <constructor>
 //            <idArg></idArg>
 //            <arg></arg>
 //        </constructor>
+
+    /**
+     * 解析resultMap标签下的constructor标签
+     */
+    private void processConstructorElement(XNode resultChild, Class<?> resultType, List<ResultMapping> resultMappings) throws Exception {
         List<XNode> argChildren = resultChild.getChildren();
         for (XNode argChild : argChildren) {
             List<ResultFlag> flags = new ArrayList<ResultFlag>();
@@ -328,6 +353,7 @@ public class XMLMapperBuilder extends BaseBuilder {
         Map<String, String> discriminatorMap = new HashMap<String, String>();
         for (XNode caseChild : context.getChildren()) {
             String value = caseChild.getStringAttribute("value");
+            //case有"resultMap"属性，则返回其属性值，否则解析case节点为一个嵌套resultMap，解析它，并返回id
             String resultMap = caseChild.getStringAttribute("resultMap", processNestedResultMappings(caseChild, resultMappings));
             discriminatorMap.put(value, resultMap);
         }
@@ -390,7 +416,9 @@ public class XMLMapperBuilder extends BaseBuilder {
         String column = context.getStringAttribute("column");
         String javaType = context.getStringAttribute("javaType");
         String jdbcType = context.getStringAttribute("jdbcType");
+        //嵌套查询
         String nestedSelect = context.getStringAttribute("select");
+        //得到嵌套ResultMapId，如果没有配置resultMapId，有可能是嵌套resultMap，解析该resultMap
         String nestedResultMap = context.getStringAttribute("resultMap",
                 processNestedResultMappings(context, Collections.<ResultMapping>emptyList()));
         String notNullColumn = context.getStringAttribute("notNullColumn");
@@ -412,19 +440,31 @@ public class XMLMapperBuilder extends BaseBuilder {
      * **** <id column="country_code" jdbcType="CHAR" property="code" />
      * **** <association property="city" resultMap="city"/>
      * </resultMap>
-     * 或者如：
-     * <resultMap id="countryAndCity" type="com.entities.Country">
+     * 或者如：（影响的只是外部对象的具体类型，subCity1、subCity2对应的java类型是Country子类）
+     * <resultMap id="city" type="com.entities.Country">
      * ****<discriminator column="country_indepYear" jdbcType="INTEGER" javaType="int">
-     * **** <case value="1949" resultMap="countryAndCity2"/>
-     * **** <case value="1776" resultMap="BaseResultMap"/>
+     * **** <case value="1949" resultMap="subCity1"/>
+     * **** <case value="1776" resultMap="subCity2"/>
      * **** </discriminator>
      * </resultMap>
+     * 或者如：（影响的只是外部对象的一个属性）
+     * <discriminator javaType="int" column="user_id">
+     * **** <case value="1" resultType="userDiscriminator1">
+     * ********* <result property="province" column="user_province"/>
+     * ********* <result property="city" column="user_city"/>
+     * ****  </case>
+     * **** <case value="2" resultType="userDiscriminator2">
+     * ********* <result property="birthday" column="user_birthday"/>
+     * ********* <result property="age" column="user_age"/>
+     * **** </case>
+     * </discriminator>
      */
     private String processNestedResultMappings(XNode context, List<ResultMapping> resultMappings) throws Exception {
         if ("association".equals(context.getName())
                 || "collection".equals(context.getName())
                 || "case".equals(context.getName())) {
             if (context.getStringAttribute("select") == null) {
+                //含有select是嵌套查询，走另外的处理逻辑，此处只解析嵌套ResultMap
                 ResultMap resultMap = resultMapElement(context, resultMappings);
                 return resultMap.getId();
             }

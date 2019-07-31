@@ -82,7 +82,7 @@ public class XNode {
     }
 
     /**
-     * 取得标示符   ("resultMap[authorResult]")
+     * 取得标示符   ("resultMap[authorResult]")，可见单元测试
      * XMLMapperBuilder.resultMapElement调用
      * <resultMap id="authorResult" type="Author">
      * <id property="id" column="author_id"/>
@@ -106,8 +106,7 @@ public class XNode {
             if (value != null) {
                 value = value.replace('.', '_');
                 builder.insert(0, "]");
-                builder.insert(0,
-                        value);
+                builder.insert(0, value);
                 builder.insert(0, "[");
             }
             builder.insert(0, current.getName());
@@ -322,6 +321,9 @@ public class XNode {
         return children;
     }
 
+    /**
+     * Children有name-value对则取出
+     */
     public Properties getChildrenAsProperties() {
         Properties properties = new Properties();
         for (XNode child : getChildren()) {
@@ -368,6 +370,9 @@ public class XNode {
         return builder.toString();
     }
 
+    /**
+     * 取得节点n的属性key-value，value替换掉${}
+     */
     private Properties parseAttributes(Node n) {
         Properties attributes = new Properties();
         NamedNodeMap attributeNodes = n.getAttributes();
@@ -381,6 +386,9 @@ public class XNode {
         return attributes;
     }
 
+    /**
+     * 取出body，如果当前节点无body，则使用其子节点的body
+     */
     private String parseBody(Node node) {
         String data = getBodyData(node);
         if (data == null) {
@@ -397,8 +405,7 @@ public class XNode {
     }
 
     private String getBodyData(Node child) {
-        if (child.getNodeType() == Node.CDATA_SECTION_NODE
-                || child.getNodeType() == Node.TEXT_NODE) {
+        if (child.getNodeType() == Node.CDATA_SECTION_NODE || child.getNodeType() == Node.TEXT_NODE) {
             String data = ((CharacterData) child).getData();
             data = PropertyParser.parse(data, variables);
             return data;

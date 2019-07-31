@@ -71,18 +71,18 @@ public class XMLIncludeTransformer {
      *
      * @param source           Include node in DOM tree
      * @param variablesContext Current context for static variables with values
+     *                         刚进入此方法时variablesContext为config中配置的k-v对
      */
     private void applyIncludes(Node source, final Properties variablesContext) {
         if (source.getNodeName().equals("include")) {
             // new full context for included SQL - contains inherited context and new variables from current include node
             Properties fullContext;
-
             String refid = getStringAttribute(source, "refid");
             //替换refid中的 ${}
             refid = PropertyParser.parse(refid, variablesContext);
             //找到sql片段，该sql片段中可能还包含其他sql片段，所以需要递归
             Node toInclude = findSqlFragment(refid);
-            //找到source中定义的属性对
+            //找到source中定义的属性对，并与variablesContext合并到fullContext中
             Properties newVariablesContext = getVariablesContext(source, variablesContext);
             if (!newVariablesContext.isEmpty()) {
                 // merge contexts
@@ -96,6 +96,7 @@ public class XMLIncludeTransformer {
             //替换sql中的${}
             applyIncludes(toInclude, fullContext);
             if (toInclude.getOwnerDocument() != source.getOwnerDocument()) {
+                //如果sql节点不在当前的doc中即mapper文件中，则当前文件doc引入该sql节点
                 //source所在doc引入toInclude
                 toInclude = source.getOwnerDocument().importNode(toInclude, true);
             }
@@ -114,11 +115,11 @@ public class XMLIncludeTransformer {
                 applyIncludes(children.item(i), variablesContext);
             }
         } else if (source.getNodeType() == Node.ATTRIBUTE_NODE && !variablesContext.isEmpty()) {
-            // replace variables in all attribute values
+            //替换value
             source.setNodeValue(PropertyParser.parse(source.getNodeValue(), variablesContext));
         } else if (source.getNodeType() == Node.TEXT_NODE && !variablesContext.isEmpty()) {
             // replace variables ins all text nodes
-            //如果当前节点为test节点，将nodeValue即test内容${}中的元素进行替换
+            //如果当前节点为text节点，将nodeValue即text内容${}中的元素进行替换
             source.setNodeValue(PropertyParser.parse(source.getNodeValue(), variablesContext));
         }
     }
@@ -129,6 +130,7 @@ public class XMLIncludeTransformer {
     private Node findSqlFragment(String refid) {
         refid = builderAssistant.applyCurrentNamespace(refid, true);
         try {
+            //configuration.getSqlFragments()与XMLMapperBuilder.sqlFragments是同一引用，在解析statement之前，在XMLMapperBuilder之中已经解析过了sql并被放入到XMLMapperBuilder.sqlFragments中
             XNode nodeToInclude = configuration.getSqlFragments().get(refid);
             return nodeToInclude.getNode().cloneNode(true);
         } catch (IllegalArgumentException e) {

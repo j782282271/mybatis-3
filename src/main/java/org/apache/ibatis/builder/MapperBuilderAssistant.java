@@ -326,8 +326,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
             String nestedResultMap, String notNullColumn,
             String columnPrefix, Class<? extends TypeHandler<?>> typeHandler,
             List<ResultFlag> flags, String resultSet, String foreignColumn, boolean lazy) {
-
+        //如果javaType==null,解析resultType的property属性的java类型
         Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+        //获取typeHandler的实例
         TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
         List<ResultMapping> composites = parseCompositeColumnName(column);
         if (composites.size() > 0) {

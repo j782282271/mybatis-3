@@ -30,12 +30,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 一个 select节点会创建一个XMLScriptBuilder
+ *
  * @author Clinton Begin
  */
 public class XMLScriptBuilder extends BaseBuilder {
 
+    /**
+     * select update 等节点
+     */
     private XNode context;
+    /**
+     * 是否是动态sql
+     */
     private boolean isDynamic;
+    /**
+     * sql的查询参数类型
+     */
     private Class<?> parameterType;
 
     public XMLScriptBuilder(Configuration configuration, XNode context) {

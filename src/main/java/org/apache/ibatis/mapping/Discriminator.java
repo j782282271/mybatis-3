@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * <discriminator javaType="int" column="draft">
- * <case value="1" resultType="DraftPost"/>
+ * ***<case value="1" resultMap="BaseResultMap"/>
  * </discriminator>
  *
  * @author Clinton Begin
@@ -30,12 +30,12 @@ import java.util.Map;
 public class Discriminator {
 
     /**
-     * Discriminator属性
+     * Discriminator标签本身就是一种ResultMapping，所以包装ResultMapping
      */
     private ResultMapping resultMapping;
     /**
      * key：case 中的value
-     * value：case 中的resultType
+     * value：case 中的resultMapId
      */
     private Map<String, String> discriminatorMap;
 
