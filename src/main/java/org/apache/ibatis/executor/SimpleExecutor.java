@@ -32,6 +32,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * 通过transaction获取并包装Connection
+ * 使用StatementHandler根据connection创建并参数化jdbc的Statement
+ * 调用StatementHandler执行sql
+ *
  * @author Clinton Begin
  */
 public class SimpleExecutor extends BaseExecutor {
@@ -82,6 +86,10 @@ public class SimpleExecutor extends BaseExecutor {
         return Collections.emptyList();
     }
 
+    /**
+     * 通过transaction获取并包装Connection
+     * 使用StatementHandler根据connection创建并参数化jdbc的Statement，并返回
+     */
     private Statement prepareStatement(StatementHandler handler, Log statementLog) throws SQLException {
         Statement stmt;
         //根据transaction获取conn，并封装成带有logger的conn子类

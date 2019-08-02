@@ -48,7 +48,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
     public void processBatch(MappedStatement ms, Statement stmt, Collection<Object> parameters) {
         ResultSet rs = null;
         try {
-            //含有key属性
+            //stmt含有key属性
             rs = stmt.getGeneratedKeys();
             final Configuration configuration = ms.getConfiguration();
             final TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
@@ -59,7 +59,7 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
             TypeHandler<?>[] typeHandlers = null;
             //需要赋值的属性不为空，且rsmd中有足够多的属性的jdbc标识
             if (keyProperties != null && rsmd.getColumnCount() >= keyProperties.length) {
-                //输入参数是一个集合，遍历集合中每个元素，为每个元素的待赋值属性赋值
+                //输入参数是一个集合，遍历集合中每个元素，为每个元素的待赋值属性集合赋值
                 for (Object parameter : parameters) {
                     if (!rs.next()) {
                         break;

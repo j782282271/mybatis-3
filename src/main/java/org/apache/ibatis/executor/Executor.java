@@ -28,6 +28,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
+ * 由sqlSession调用本类
+ *
  * @author Clinton Begin
  */
 public interface Executor {

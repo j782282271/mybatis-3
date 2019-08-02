@@ -28,6 +28,10 @@ import java.sql.*;
 import java.util.List;
 
 /**
+ * 父类BaseStatementHandler负责创建jdbc的Statement
+ * 当前子类负责参数化jdbc的Statement、执行jdbc的Statement
+ * 调用keyGenerator
+ *
  * @author Clinton Begin
  */
 public class PreparedStatementHandler extends BaseStatementHandler {

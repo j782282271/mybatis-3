@@ -26,6 +26,8 @@ import java.sql.Statement;
 import java.util.List;
 
 /**
+ * 由Executor调用本类
+ *
  * @author Clinton Begin
  */
 public interface StatementHandler {

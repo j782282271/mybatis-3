@@ -54,7 +54,7 @@ public class DefaultSqlSession implements SqlSession {
     /**
      * 记录本SqlSession创建过的游标对象
      * 防止用户忘记关闭Cursor对象
-     * 在this.closeCursors会关闭所有Cursor对象
+     * 在this.closeCursors中会关闭所有Cursor对象
      */
     private List<Cursor<?>> cursorList;
 

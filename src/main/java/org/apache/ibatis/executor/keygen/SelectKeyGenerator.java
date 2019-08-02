@@ -58,6 +58,10 @@ public class SelectKeyGenerator implements KeyGenerator {
         }
     }
 
+    /**
+     * 将keyStatement查询出来的key结果赋值给:
+     * parameter的keyStatement.getKeyProperties()属性
+     */
     private void processGeneratedKeys(Executor executor, MappedStatement ms, Object parameter) {
         try {
             if (parameter != null && keyStatement != null && keyStatement.getKeyProperties() != null) {

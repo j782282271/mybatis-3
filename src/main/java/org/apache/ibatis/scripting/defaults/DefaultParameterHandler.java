@@ -76,14 +76,18 @@ public class DefaultParameterHandler implements ParameterHandler {
                 ParameterMapping parameterMapping = parameterMappings.get(i);
                 if (parameterMapping.getMode() != ParameterMode.OUT) {
                     Object value;
+                    //propertyName为#{}内指定的属性名
                     String propertyName = parameterMapping.getProperty();
+                    //boundSql.additionalParameter中有该属性对应的入参值
                     if (boundSql.hasAdditionalParameter(propertyName)) { // issue #448 ask first for additional params
                         value = boundSql.getAdditionalParameter(propertyName);
                     } else if (parameterObject == null) {
                         value = null;
                     } else if (typeHandlerRegistry.hasTypeHandler(parameterObject.getClass())) {
+                        //有入参parameterObject的TypeHandler，则直接用入参作为属性值
                         value = parameterObject;
                     } else {
+                        //构造parameterObject的MetaObject，获取其propertyName属性值
                         MetaObject metaObject = configuration.newMetaObject(parameterObject);
                         value = metaObject.getValue(propertyName);
                     }
@@ -93,6 +97,7 @@ public class DefaultParameterHandler implements ParameterHandler {
                         jdbcType = configuration.getJdbcTypeForNull();
                     }
                     try {
+                        //绑定参数
                         typeHandler.setParameter(ps, i + 1, value, jdbcType);
                     } catch (TypeException e) {
                         throw new TypeException("Could not set parameters for mapping: " + parameterMapping + ". Cause: " + e, e);

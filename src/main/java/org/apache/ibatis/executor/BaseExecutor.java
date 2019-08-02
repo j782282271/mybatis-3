@@ -54,6 +54,9 @@ public abstract class BaseExecutor implements Executor {
     private static final Log log = LogFactory.getLog(BaseExecutor.class);
 
     protected Transaction transaction;
+    /**
+     * wrapper就是this
+     */
     protected Executor wrapper;
 
     /**
@@ -81,6 +84,9 @@ public abstract class BaseExecutor implements Executor {
 
     private boolean closed;
 
+    /**
+     * configuration.newExecutor方法会调用本方法创建Executor
+     */
     protected BaseExecutor(Configuration configuration, Transaction transaction) {
         this.transaction = transaction;
         this.deferredLoads = new ConcurrentLinkedQueue<DeferredLoad>();
@@ -100,7 +106,7 @@ public abstract class BaseExecutor implements Executor {
     }
 
     /**
-     * 清空缓存，并根据参数决定是否回滚
+     * 清空所有属性，本类不再可用，并根据参数决定是否回滚
      */
     @Override
     public void close(boolean forceRollback) {
@@ -189,15 +195,15 @@ public abstract class BaseExecutor implements Executor {
             queryStack--;
         }
         if (queryStack == 0) {
-            //最外层的查询完成了，则所有嵌套查询都已完成，相关缓存项，也已经完全加载，在这里可以触发
-            //DeferredLoad加载在一级缓存中记录的嵌套查询结果对象
+            //一次查询中可能存在多次嵌套查询，当这些嵌套查询sql语句相同且参数相同，则只调用第一次该sql查询，然后将其缓存起来，
+            // 后面的嵌套查询就可以服用前面的缓存值，就不需要再次查询了
             for (DeferredLoad deferredLoad : deferredLoads) {
                 deferredLoad.load();
             }
             // issue #601
             deferredLoads.clear();
             if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
-                //根据localCacheScope决定是否情况一级缓存
+                //根据localCacheScope决定是否清空一级缓存
                 // issue #482
                 clearLocalCache();
             }
@@ -232,6 +238,7 @@ public abstract class BaseExecutor implements Executor {
 
     /**
      * 创建缓存key
+     * 使用resultMapId、offfset、limit、sql、sql使用到的参数值
      */
     @Override
     public CacheKey createCacheKey(MappedStatement ms, Object parameterObject, RowBounds rowBounds, BoundSql boundSql) {
@@ -363,7 +370,7 @@ public abstract class BaseExecutor implements Executor {
                 final MetaObject metaCachedParameter = configuration.newMetaObject(cachedParameter);
                 //本次查询的入参
                 final MetaObject metaParameter = configuration.newMetaObject(parameter);
-                //本次查询的入参中输出参数，赋值为上次查询到结果的的入参对应的属性值
+                //本次查询输入参数中的出参，赋值为上次查询到结果的的入参对应的属性值
                 for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {
                     if (parameterMapping.getMode() != ParameterMode.IN) {
                         final String parameterName = parameterMapping.getProperty();
@@ -377,6 +384,7 @@ public abstract class BaseExecutor implements Executor {
 
     /**
      * 调用子类方法，不走缓存，直接查询数据库
+     * 查询结果保存到缓存中
      */
     private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
         List<E> list;
@@ -410,8 +418,11 @@ public abstract class BaseExecutor implements Executor {
         this.wrapper = wrapper;
     }
 
+    /**
+     * 一次查询中可能存在多次嵌套查询
+     * 当这些嵌套查询sql语句相同且参数相同，则被缓存到
+     */
     private static class DeferredLoad {
-
         /**
          * 外层对象对应的MetaObject
          */
@@ -461,10 +472,12 @@ public abstract class BaseExecutor implements Executor {
          * 加载一级缓存中的缓存值，将其赋到外层对象resultObject的属性上
          */
         public void load() {
-            // we suppose we get back a List
+            //获取缓存值
             @SuppressWarnings("unchecked")
             List<Object> list = (List<Object>) localCache.getObject(key);
+            //将缓存值转换为期望类型
             Object value = resultExtractor.extractObjectFromList(list, targetType);
+            //设置外层对象对一个属性值
             resultObject.setValue(property, value);
         }
     }

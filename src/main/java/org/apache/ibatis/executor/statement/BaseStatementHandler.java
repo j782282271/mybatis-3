@@ -34,6 +34,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
+ * 参数绑定到sql
+ * 结果集处理
+ * 创建statement
+ * sql执行
+ * KeyGenerator执行
+ *
  * @author Clinton Begin
  */
 public abstract class BaseStatementHandler implements StatementHandler {
