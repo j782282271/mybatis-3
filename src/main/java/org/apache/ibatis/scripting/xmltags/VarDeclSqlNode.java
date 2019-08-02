@@ -28,8 +28,17 @@ public class VarDeclSqlNode implements SqlNode {
         expression = exp;
     }
 
+    /**
+     * Bind节点会创建VarDeclSqlNode
+     * <if test="userName != null and userName != ''">
+     * //	<bind name="nameLike" value="'%' + userName + '%'"/>
+     * //    and user_name like #{nameLike}
+     * </if>
+     */
     @Override
     public boolean apply(DynamicContext context) {
+        //name="nameLike",expression='%' + userName + '%'
+        //将#{nameLike}替换为'%' + userName + '%'，其中userName会被替换为运行时参数中的值
         final Object value = OgnlCache.getValue(expression, context.getBindings());
         context.bind(name, value);
         return true;

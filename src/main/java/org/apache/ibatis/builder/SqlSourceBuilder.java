@@ -46,6 +46,7 @@ public class SqlSourceBuilder extends BaseBuilder {
      * @param additionalParameters 运行时参数，即context.getBindings(),其中有_frc_item_0的对应项
      */
     public SqlSource parse(String originalSql, Class<?> parameterType, Map<String, Object> additionalParameters) {
+        //handler解析originalSql中每一个#{content},用？替换。同时将所有content存储到handler.getParameterMappings()
         ParameterMappingTokenHandler handler = new ParameterMappingTokenHandler(configuration, parameterType, additionalParameters);
         GenericTokenParser parser = new GenericTokenParser("#{", "}", handler);
         String sql = parser.parse(originalSql);
@@ -78,10 +79,17 @@ public class SqlSourceBuilder extends BaseBuilder {
             return "?";
         }
 
+        /**
+         * content为#{}内部的值，形如：
+         * "_frc_item_0,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler"
+         * 将这些值组合到ParameterMapping中并返回
+         */
         private ParameterMapping buildParameterMapping(String content) {
+            //内容key-v化，没有key的使用property作为其key，这个也是真正的参数标识name
             Map<String, String> propertiesMap = parseParameterMapping(content);
             String property = propertiesMap.get("property");
             Class<?> propertyType;
+            //去metaParameters中找到property属性的java类型
             if (metaParameters.hasGetter(property)) { // issue #448 get type from additional params
                 propertyType = metaParameters.getGetterType(property);
             } else if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
@@ -98,6 +106,7 @@ public class SqlSourceBuilder extends BaseBuilder {
             } else {
                 propertyType = Object.class;
             }
+            //创建ParameterMapping并返回
             ParameterMapping.Builder builder = new ParameterMapping.Builder(configuration, property, propertyType);
             Class<?> javaType = propertyType;
             String typeHandlerAlias = null;
@@ -133,6 +142,9 @@ public class SqlSourceBuilder extends BaseBuilder {
             return builder.build();
         }
 
+        /**
+         * content中含有很多个等号，每个等号作为分隔符，两遍作为key-v为返回的map
+         */
         private Map<String, String> parseParameterMapping(String content) {
             try {
                 return new ParameterExpression(content);

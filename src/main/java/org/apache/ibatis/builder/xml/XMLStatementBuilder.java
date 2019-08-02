@@ -95,6 +95,7 @@ public class XMLStatementBuilder extends BaseBuilder {
         processSelectKeyNodes(id, parameterTypeClass, langDriver);
 
         // Parse the SQL (pre: <selectKey> and <include> were parsed and removed)
+        //解析SQL语句创建SqlSource
         SqlSource sqlSource = langDriver.createSqlSource(configuration, context, parameterTypeClass);
         String resultSets = context.getStringAttribute("resultSets");
         String keyProperty = context.getStringAttribute("keyProperty");
@@ -112,6 +113,7 @@ public class XMLStatementBuilder extends BaseBuilder {
                     ? new Jdbc3KeyGenerator() : new NoKeyGenerator();
         }
 
+        //根据SqlSource等信息创建MappedStatement，并添加到configuration中
         builderAssistant.addMappedStatement(id, sqlSource, statementType, sqlCommandType,
                 fetchSize, timeout, parameterMap, parameterTypeClass, resultMap, resultTypeClass,
                 resultSetTypeEnum, flushCache, useCache, resultOrdered,

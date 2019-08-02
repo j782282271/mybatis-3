@@ -27,7 +27,13 @@ import java.util.List;
  */
 public class StaticSqlSource implements SqlSource {
 
+    /**
+     * #{}全被替换为？
+     */
     private String sql;
+    /**
+     * 每个#{}中的内容被解析为ParameterMapping
+     */
     private List<ParameterMapping> parameterMappings;
     private Configuration configuration;
 

@@ -37,8 +37,17 @@ public class DynamicContext {
         OgnlRuntime.setPropertyAccessor(ContextMap.class, new ContextAccessor());
     }
 
+    /**
+     * 记录了运行时请求参数
+     */
     private final ContextMap bindings;
+    /**
+     * 记录了sql，尚未绑定参数，即仍含有#{}字符串
+     */
     private final StringBuilder sqlBuilder = new StringBuilder();
+    /**
+     * 用于foreach，记录一条sql中的所有集合总和i，防止同一条sql两个foreach，他们的item相同，则各自计数，会产生重复标识
+     */
     private int uniqueNumber = 0;
 
     public DynamicContext(Configuration configuration, Object parameterObject) {

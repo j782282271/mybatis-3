@@ -19,5 +19,8 @@ package org.apache.ibatis.scripting.xmltags;
  * @author Clinton Begin
  */
 public interface SqlNode {
+    /**
+     * 提供功能：将this中的sql片段，结合context中的运行参数，替换掉#{}内容之后append到context.sqlBuilder字段中
+     */
     boolean apply(DynamicContext context);
 }

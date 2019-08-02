@@ -208,52 +208,29 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return new Discriminator.Builder(configuration, resultMapping, namespaceDiscriminatorMap).build();
     }
 
+    /**
+     * @param id        select语句的id，也对应着接口的方法名
+     * @param sqlSource 含有sql语句信息还有参数信息
+     */
     public MappedStatement addMappedStatement(
-            String id,
-            SqlSource sqlSource,
-            StatementType statementType,
-            SqlCommandType sqlCommandType,
-            Integer fetchSize,
-            Integer timeout,
-            String parameterMap,
-            Class<?> parameterType,
-            String resultMap,
-            Class<?> resultType,
-            ResultSetType resultSetType,
-            boolean flushCache,
-            boolean useCache,
-            boolean resultOrdered,
-            KeyGenerator keyGenerator,
-            String keyProperty,
-            String keyColumn,
-            String databaseId,
-            LanguageDriver lang,
-            String resultSets) {
-
+            String id, SqlSource sqlSource, StatementType statementType, SqlCommandType sqlCommandType,
+            Integer fetchSize, Integer timeout, String parameterMap, Class<?> parameterType, String resultMap,
+            Class<?> resultType, ResultSetType resultSetType, boolean flushCache, boolean useCache,
+            boolean resultOrdered, KeyGenerator keyGenerator, String keyProperty, String keyColumn,
+            String databaseId, LanguageDriver lang, String resultSets) {
         if (unresolvedCacheRef) {
             throw new IncompleteElementException("Cache-ref not yet resolved");
         }
-
         id = applyCurrentNamespace(id, false);
         boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
         MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
-                .resource(resource)
-                .fetchSize(fetchSize)
-                .timeout(timeout)
-                .statementType(statementType)
-                .keyGenerator(keyGenerator)
-                .keyProperty(keyProperty)
-                .keyColumn(keyColumn)
-                .databaseId(databaseId)
-                .lang(lang)
-                .resultOrdered(resultOrdered)
-                .resultSets(resultSets)
-                .resultMaps(getStatementResultMaps(resultMap, resultType, id))
-                .resultSetType(resultSetType)
-                .flushCacheRequired(valueOrDefault(flushCache, !isSelect))
-                .useCache(valueOrDefault(useCache, isSelect))
-                .cache(currentCache);
+                .resource(resource).fetchSize(fetchSize).timeout(timeout).statementType(statementType)
+                .keyGenerator(keyGenerator).keyProperty(keyProperty).keyColumn(keyColumn)
+                .databaseId(databaseId).lang(lang).resultOrdered(resultOrdered)
+                .resultSets(resultSets).resultMaps(getStatementResultMaps(resultMap, resultType, id))
+                .resultSetType(resultSetType).flushCacheRequired(valueOrDefault(flushCache, !isSelect))
+                .useCache(valueOrDefault(useCache, isSelect)).cache(currentCache);
 
         ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
         if (statementParameterMap != null) {
@@ -269,10 +246,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         return value == null ? defaultValue : value;
     }
 
-    private ParameterMap getStatementParameterMap(
-            String parameterMapName,
-            Class<?> parameterTypeClass,
-            String statementId) {
+    private ParameterMap getStatementParameterMap(String parameterMapName, Class<?> parameterTypeClass, String statementId) {
         parameterMapName = applyCurrentNamespace(parameterMapName, true);
         ParameterMap parameterMap = null;
         if (parameterMapName != null) {
@@ -283,11 +257,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
             }
         } else if (parameterTypeClass != null) {
             List<ParameterMapping> parameterMappings = new ArrayList<ParameterMapping>();
-            parameterMap = new ParameterMap.Builder(
-                    configuration,
-                    statementId + "-Inline",
-                    parameterTypeClass,
-                    parameterMappings).build();
+            parameterMap = new ParameterMap.Builder(configuration, statementId + "-Inline", parameterTypeClass, parameterMappings).build();
         }
         return parameterMap;
     }

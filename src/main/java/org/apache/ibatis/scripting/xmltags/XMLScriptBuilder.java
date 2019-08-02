@@ -37,7 +37,7 @@ import java.util.Map;
 public class XMLScriptBuilder extends BaseBuilder {
 
     /**
-     * select update 等节点
+     * select or update or delete or selectKey 等节点
      */
     private XNode context;
     /**
@@ -68,7 +68,7 @@ public class XMLScriptBuilder extends BaseBuilder {
             //需要解析${}
             sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
         } else {
-            //不需要解析${}，所以需要
+            //不需要解析${}
             sqlSource = new RawSqlSource(configuration, rootSqlNode, parameterType);
         }
         return sqlSource;
@@ -140,6 +140,7 @@ public class XMLScriptBuilder extends BaseBuilder {
 
         @Override
         public void handleNode(XNode nodeToHandle, List<SqlNode> targetContents) {
+            //trim节点中可能含有子节点
             List<SqlNode> contents = parseDynamicTags(nodeToHandle);
             MixedSqlNode mixedSqlNode = new MixedSqlNode(contents);
             String prefix = nodeToHandle.getStringAttribute("prefix");

@@ -34,9 +34,17 @@ import java.util.Map;
  * @author Clinton Begin
  */
 public class BoundSql {
-
+    /**
+     * #{}全被替换为？后的sql
+     */
     private String sql;
+    /**
+     * 每个#{}中的内容被解析为ParameterMapping
+     */
     private List<ParameterMapping> parameterMappings;
+    /**
+     * 参数对象
+     */
     private Object parameterObject;
     private Map<String, Object> additionalParameters;
     private MetaObject metaParameters;

@@ -27,6 +27,14 @@ import java.util.Map;
 public class ForEachSqlNode implements SqlNode {
     public static final String ITEM_PREFIX = "__frch_";
 
+    /**
+     * <foreach collection="list" index="i" item="ele" separator=",">
+     * ***#{ele.name},#{i}
+     * </foreach>
+     * this.item="ele"
+     * this.index="i"
+     * this.index=本次查询所有的foreach大小累加的当前值，如果只有一个foreach，则index一定等于当前元素的下标
+     */
     private ExpressionEvaluator evaluator;
     private String collectionExpression;
     private SqlNode contents;
@@ -49,6 +57,11 @@ public class ForEachSqlNode implements SqlNode {
         this.configuration = configuration;
     }
 
+    /**
+     * <foreach collection="list" index="i" item="ele" separator=",">
+     * ***#{ele.name},#{i}
+     * </foreach>
+     */
     @Override
     public boolean apply(DynamicContext context) {
         Map<String, Object> bindings = context.getBindings();
@@ -76,7 +89,15 @@ public class ForEachSqlNode implements SqlNode {
                 applyIndex(context, mapEntry.getKey(), uniqueNumber);
                 applyItem(context, mapEntry.getValue(), uniqueNumber);
             } else {
+                //绑定this.index对应的值为i（context）
+                //绑定__frch_index_uniqueNumber对应的值为i（context）
+                //FilteredDynamicContext.appendSql中会将#{i}替换为#{__frch_index_uniqueNumber}
+                //将#{__frch_index_uniqueNumber}替换为真正的运行参数时，会将从context中取出__frch_index_uniqueNumber对应的值i，替换#{__frch_index_uniqueNumber}
                 applyIndex(context, i, uniqueNumber);
+                //绑定this.item对应的值为o（无用）（context）
+                //绑定__frch_item_uniqueNumber对应的值为o（context）
+                //FilteredDynamicContext.appendSql中会将#{item}替换为#{__frch_item_uniqueNumber}
+                //将#{__frch_item_uniqueNumber}替换为真正的运行参数时，会将从context中取出__frch_item_uniqueNumber对应的值o，替换#{__frch_item_uniqueNumber}
                 applyItem(context, o, uniqueNumber);
             }
             contents.apply(new FilteredDynamicContext(configuration, context, index, item, uniqueNumber));
@@ -92,14 +113,18 @@ public class ForEachSqlNode implements SqlNode {
 
     private void applyIndex(DynamicContext context, Object o, int i) {
         if (index != null) {
+            //绑定this.index对应的值为o
             context.bind(index, o);
+            //绑定__frch_index_i对应的值为o
             context.bind(itemizeItem(index, i), o);
         }
     }
 
     private void applyItem(DynamicContext context, Object o, int i) {
         if (item != null) {
+            //绑定this.item对应的值为o
             context.bind(item, o);
+            //绑定__frch_item_i对应的值为o
             context.bind(itemizeItem(item, i), o);
         }
     }
@@ -116,6 +141,9 @@ public class ForEachSqlNode implements SqlNode {
         }
     }
 
+    /**
+     * 返回：__frch_item_i
+     */
     private static String itemizeItem(String item, int i) {
         return new StringBuilder(ITEM_PREFIX).append(item).append("_").append(i).toString();
     }
@@ -150,17 +178,22 @@ public class ForEachSqlNode implements SqlNode {
         }
 
         /**
-         * <foreach collection="list" index="i" item="item" separator=",">
-         * ***#{item.name},#{i}
+         * <foreach collection="list" index="i" item="ele" separator=",">
+         * ***#{ele.name},#{i}
          * </foreach>
+         * this.item="ele"
+         * this.itemIndex="i"
+         * this.index=本次查询所有的foreach大小累加的当前值，如果只有一个foreach，则index一定等于当前元素的下标
          */
         @Override
         public void appendSql(String sql) {
             GenericTokenParser parser = new GenericTokenParser("#{", "}", new TokenHandler() {
                 @Override
                 public String handleToken(String content) {
+                    //将#{ele.name}替换为__frch_ele_index.name,其中index=0,1,2,...
                     String newContent = content.replaceFirst("^\\s*" + item + "(?![^.,:\\s])", itemizeItem(item, index));
                     if (itemIndex != null && newContent.equals(content)) {
+                        //将#{i.name}替换为__frch_i_index.name,其中index=0,1,2,...
                         newContent = content.replaceFirst("^\\s*" + itemIndex + "(?![^.,:\\s])", itemizeItem(itemIndex, index));
                     }
                     return new StringBuilder("#{").append(newContent).append("}").toString();

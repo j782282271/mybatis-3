@@ -27,6 +27,9 @@ public class TrimSqlNode implements SqlNode {
     private SqlNode contents;
     private String prefix;
     private String suffix;
+    /**
+     * 删除以prefixesToOverride开头的东西，并将开头加上prefix
+     */
     private List<String> prefixesToOverride;
     private List<String> suffixesToOverride;
     private Configuration configuration;
@@ -47,7 +50,9 @@ public class TrimSqlNode implements SqlNode {
     @Override
     public boolean apply(DynamicContext context) {
         FilteredDynamicContext filteredDynamicContext = new FilteredDynamicContext(context);
+        //将sql存储到filteredDynamicContext.sqlBuffer中，并不存储到filteredDynamicContext.delegate(即context)中
         boolean result = contents.apply(filteredDynamicContext);
+        //当执行applyAll之后filteredDynamicContext.sqlBuffer内容trim之后一次性存储到delegate中
         filteredDynamicContext.applyAll();
         return result;
     }
@@ -103,6 +108,9 @@ public class TrimSqlNode implements SqlNode {
             return delegate.getUniqueNumber();
         }
 
+        /**
+         * 将sql存储到this.sqlBuffer中，并不存储到delegate中，当执行applyAll之后一次性存储到delegate中
+         */
         @Override
         public void appendSql(String sql) {
             sqlBuffer.append(sql);

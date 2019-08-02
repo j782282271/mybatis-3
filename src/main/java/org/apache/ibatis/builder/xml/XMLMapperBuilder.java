@@ -90,8 +90,10 @@ public class XMLMapperBuilder extends BaseBuilder {
 
     public void parse() {
         if (!configuration.isResourceLoaded(resource)) {
+            //解析mapper节点
             configurationElement(parser.evalNode("/mapper"));
             configuration.addLoadedResource(resource);
+            //添加mapper的动态代理类
             bindMapperForNamespace();
         }
 
@@ -472,11 +474,15 @@ public class XMLMapperBuilder extends BaseBuilder {
         return null;
     }
 
+    /**
+     * 将当前的mapper对应的java类型保存到configuration中，并创建mapper的代理类
+     */
     private void bindMapperForNamespace() {
         String namespace = builderAssistant.getCurrentNamespace();
         if (namespace != null) {
             Class<?> boundType = null;
             try {
+                //mapper对应的java类型
                 boundType = Resources.classForName(namespace);
             } catch (ClassNotFoundException e) {
                 //ignore, bound type is not required

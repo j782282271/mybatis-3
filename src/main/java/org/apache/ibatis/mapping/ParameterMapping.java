@@ -23,6 +23,8 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import java.sql.ResultSet;
 
 /**
+ * sql中每个#{}中的内容被解析为ParameterMapping
+ *
  * @author Clinton Begin
  */
 public class ParameterMapping {
