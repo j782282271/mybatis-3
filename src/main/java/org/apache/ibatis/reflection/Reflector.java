@@ -29,6 +29,7 @@ import java.util.*;
  * allows for easy mapping between property names and getter/setter methods.
  * 反射器, 属性->getter/setter的映射器，而且加了缓存
  * 可参考ReflectorTest来理解这个类的用处
+ *
  * @author Clinton Begin
  */
 public class Reflector {
@@ -80,6 +81,11 @@ public class Reflector {
         }
     }
 
+    /**
+     * 1获取所有Method，按照getSignature(currentMethod);去重，这种的会将继承的方法区分开成不同的方法，实际上是一种方法
+     * 2将getXXX开头的方法以XXX作为key，存储到Map<String, List<Method>> conflictingGetters，注意value为list
+     * 3，2步骤中的value为list,之所以为list，因为子类继承父类，继承的方法都在这个list中，要取出子类的该方法，作为唯一的方法
+     */
     private void addGetMethods(Class<?> cls) {
         Map<String, List<Method>> conflictingGetters = new HashMap<String, List<Method>>();
         //获取所有方法，但是这些方法中有可能有继承关系的方法，因为覆盖方法：子类的返回值和参数值可以为父类的子类，
@@ -270,6 +276,8 @@ public class Reflector {
     private void addSetField(Field field) {
         if (isValidPropertyName(field.getName())) {
             setMethods.put(field.getName(), new SetFieldInvoker(field));
+            //field可能为T这种参数类型，要到类定义中找到T的真正类型
+            //如：class A<T>{private T t;}
             Type fieldType = TypeParameterResolver.resolveFieldType(field, type);
             setTypes.put(field.getName(), typeToClass(fieldType));
         }
