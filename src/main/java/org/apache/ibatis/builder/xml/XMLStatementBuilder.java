@@ -86,7 +86,7 @@ public class XMLStatementBuilder extends BaseBuilder {
         boolean resultOrdered = context.getBooleanAttribute("resultOrdered", false);
 
         // Include Fragments before parsing
-        //替换当前select(or update)语句中的include sql（<include refid="baseSql"/>）为真正的sql，并替换其中的${                     }
+        //替换当前select(or update)语句中的include sql（<include refid="baseSql"/>）为真正的sql，并替换其中的${}
         XMLIncludeTransformer includeParser = new XMLIncludeTransformer(configuration, builderAssistant);
         includeParser.applyIncludes(context.getNode());
 

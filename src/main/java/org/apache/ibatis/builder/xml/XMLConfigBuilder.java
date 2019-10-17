@@ -112,6 +112,7 @@ public class XMLConfigBuilder extends BaseBuilder {
             objectFactoryElement(root.evalNode("objectFactory"));
             objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
             reflectionFactoryElement(root.evalNode("reflectionFactory"));
+            //设置configuration的复杂类型属性
             settingsElement(settings);
             // read it after objectFactory and objectWrapperFactory issue #631
             environmentsElement(root.evalNode("environments"));
