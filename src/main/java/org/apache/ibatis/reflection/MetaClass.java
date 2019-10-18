@@ -28,7 +28,7 @@ import java.util.Collection;
 
 /**
  * MetaClass封装了Reflector，比Reflector功能更丰富，丰富的功能：
- * 能处理orders[0].items[0].name这种递归子类
+ * 能处理orders[0].items[0].name这种递归内部属性
  *
  * @author Clinton Begin
  */

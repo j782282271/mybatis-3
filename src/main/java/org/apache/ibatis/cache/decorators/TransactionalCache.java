@@ -32,6 +32,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * Entries are sent to the cache when commit is called or discarded if the Session is rolled back.
  * Blocking cache support has been added. Therefore any get() that returns a cache miss
  * will be followed by a put() so any lock associated with the key can be released.
+ * 在一次事务中也可能有查询，查询的结果不能立即放入二级缓存，因为这个查询结果可能是本次事务之前的写操作产生的，并没有commit,所以本次查询结果只有commit成功后才可以加到二级缓存
  * 主要保存某个sqlSession的某个事务需要向某个二级缓存中添加的数据
  *
  * @author Clinton Begin
@@ -100,7 +101,7 @@ public class TransactionalCache implements Cache {
     }
 
     /**
-     * 并没有直接放到二级缓存中，而是暂存到entriesToAddOnCommit中
+     * 并没有直接放到二级缓存中，而是暂存到entriesToAddOnCommit中，当事务提交的时候，才会从entriesToAddOnCommit取出数据放到二级缓存中
      */
     @Override
     public void putObject(Object key, Object object) {
