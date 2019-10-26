@@ -65,7 +65,7 @@ public abstract class BaseExecutor implements Executor {
     protected ConcurrentLinkedQueue<DeferredLoad> deferredLoads;
     /**
      * 一级缓存，用于缓存当前Executor查询结果集映射得到的结果对象
-     * 一级缓存是回话级别的缓存，mybatis中每创建一个sqlSession，就表示开启一次数据库会话。
+     * 一级缓存是会话级别的缓存，mybatis中每创建一个sqlSession，就表示开启一次数据库会话。
      * sqlSession封装了Executor，当调用Executor.close方法时，一级缓存就不再可用。
      * 例如在一个事务内，反复执行同一条相同的sql查询，如果不缓存就会造成浪费。
      * localCache作为一级缓存，每次执行sql时都会查询是否有该sql的缓存值，如果有则使用，不进行查库
