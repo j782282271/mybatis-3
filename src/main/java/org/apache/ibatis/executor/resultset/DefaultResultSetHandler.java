@@ -266,7 +266,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     }
 
     /**
-     * 暂时没看
+     * 以游标的方式遍历解析resultSet中每个元素为T对象
      */
     @Override
     public <E> Cursor<E> handleCursorResultSets(Statement stmt) throws SQLException {
