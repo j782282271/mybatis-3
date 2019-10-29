@@ -139,7 +139,7 @@ public class DefaultCursor<T> implements Cursor<T> {
 
         try {
             status = CursorStatus.OPEN;
-            resultSetHandler. handleRowValues(rsw, resultMap, objectWrapperResultHandler, RowBounds.DEFAULT, null);
+            resultSetHandler.handleRowValues(rsw, resultMap, objectWrapperResultHandler, RowBounds.DEFAULT, null);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

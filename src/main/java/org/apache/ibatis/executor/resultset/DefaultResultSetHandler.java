@@ -46,6 +46,9 @@ import java.util.*;
 /**
  * 配置内容：https://blog.csdn.net/abcd898989/article/details/51189977
  * 解析过程可参考配置内容的含义
+ * 1多结果集
+ * 2嵌套查询，延迟加载，缓存
+ * 3嵌套resultMap
  *
  * @author Clinton Begin
  * @author Eduardo Macarron
@@ -71,10 +74,14 @@ public class DefaultResultSetHandler implements ResultSetHandler {
      */
     private final Map<CacheKey, Object> nestedResultObjects = new HashMap<CacheKey, Object>();
     /**
-     * 用于处理：循环引用key:resultMapId
+     * 用于处理嵌套resultMap，如果当前解析到内层resultMap，则ancestorObjects记录了当前属性对象所属的对象即其父亲爷爷等等祖先的对象，key为祖先resultMapId,value为祖先对象
+     * 当前属性对象可能会反过来引用其父亲爷爷等外部对象，称为循环引用，需要本字段
      */
     private final Map<String, Object> ancestorObjects = new HashMap<String, Object>();
     private final Map<String, String> ancestorColumnPrefix = new HashMap<String, String>();
+    /**
+     * 上一行记录值
+     */
     private Object previousRowValue;
 
     /**
@@ -229,6 +236,16 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 //            <result property="bio" column="bio"/>
 //          </association>
 //        </resultMap>
+        /**
+         * 多结果集处理过程，以上面配置为例
+         * 1解析Blog，发现其属性author，有一个resultSet="authors"标记，表明该属性为多结果集属性，则：
+         * 1.1将该属性放到this.nextResultMaps中，key为resultSet名(authors) value为该属性的ResultMapping
+         * 1.2将当前行的Blob对象+propertyMapping组合成PendingRelation放到this.pendingRelations，key由ResultMapping和对应的行值创建
+         * 2resultSets="blogs,authors" 。解析完blogs发现还剩一个resultSet：authors没解析，开始解析authors
+         * 2.1根据authors到this.nextResultMaps中找到ResultMapping称为parentMapping，并根据它获取它对应的嵌套的ResultMap
+         * 2.2取并下一个ResultSet，获根据2.1的ResultMap解析该ResultSet，解析的每个行值并不作为返回值，而是加到pendingRelations
+         * 中对应的对象的对应属性上
+         * */
         String[] resultSets = mappedStatement.getResultSets();
         if (resultSets != null) {
             while (rsw != null && resultSetCount < resultSets.length) {
@@ -669,7 +686,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
     /**
      * 添加到多结果集中，等到处理下一个sql语句（或者说是下一个resultSet）时会使用
-     * 处理下一个resultSet时得到的结果会被赋值给本字段
+     * 处理下一个resultSet时得到的结果会被赋值给本字段(当前resultSet的元素属性中)
+     * 即个resultSet的查询结果，放在前一个resultSet的元素属性中
+     * PendingRelation.metaObject前一个resultSet的元素对象
+     * PendingRelation.propertyMapping前一个resultSet的属性
      *
      * @param rs
      * @param metaResultObject
@@ -892,9 +912,11 @@ public class DefaultResultSetHandler implements ResultSetHandler {
             final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
             final Class<?> targetType = propertyMapping.getJavaType();
             if (executor.isCached(nestedQuery, key)) {
+                //一级缓存中已经加载过该嵌套查询，则调用executor.deferLoad方法，直接赋值，见BaseExecutor的类上的注释
                 executor.deferLoad(nestedQuery, metaResultObject, property, key, targetType);
                 value = DEFERED;
             } else {
+                //一级缓存中没有加载过该sql，判断是否需要延迟加载
                 final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
                 if (propertyMapping.isLazy()) {
                     //延迟加载，但是返回DEFERED对象
@@ -1017,6 +1039,9 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         return prefix + columnName;
     }
 
+    /**
+     * 嵌套resultMap的解析，见mybatis技术内幕示例261页
+     */
     private void handleRowValuesForNestedResultMap(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
         final DefaultResultContext<Object> resultContext = new DefaultResultContext<Object>();
         skipRows(rsw.getResultSet(), rowBounds);
@@ -1044,7 +1069,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
                 }
             }
         }
-        //shouldProcessMoreRows(resultContext, rowBounds)==true，说明了上面while条件中rsw.getResultSet().next()==fasle，即说明处理到了最后一行
+        //shouldProcessMoreRows(resultContext, rowBounds)==true，说明了上面while条件中rsw.getResultSet().next()==false，即说明处理到了最后一行
         //如果mappedStatement.isResultOrdered() 开启，且最后一行不为空，则应该将rowValue存储起来，否则就落在nestedResultObjects中了
         if (rowValue != null && mappedStatement.isResultOrdered() && shouldProcessMoreRows(resultContext, rowBounds)) {
             storeObject(resultHandler, resultContext, rowValue, parentMapping, rsw.getResultSet());
@@ -1115,6 +1140,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         for (ResultMapping resultMapping : resultMap.getPropertyResultMappings()) {
             //获取嵌套resultMapId,该值不为空说明存在嵌套映射要处理
             final String nestedResultMapId = resultMapping.getNestedResultMapId();
+            //resultMapping.getResultSet()如果不为空，则多结果集会处理
             if (nestedResultMapId != null && resultMapping.getResultSet() == null) {
                 try {
                     //嵌套映射，column前缀处理，要加上父前缀

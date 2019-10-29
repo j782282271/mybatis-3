@@ -80,6 +80,7 @@ public class PreparedStatementHandler extends BaseStatementHandler {
     protected Statement instantiateStatement(Connection connection) throws SQLException {
         String sql = boundSql.getSql();
         if (mappedStatement.getKeyGenerator() instanceof Jdbc3KeyGenerator) {
+            //insert
             String[] keyColumnNames = mappedStatement.getKeyColumns();
             if (keyColumnNames == null) {
                 return connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -87,6 +88,7 @@ public class PreparedStatementHandler extends BaseStatementHandler {
                 return connection.prepareStatement(sql, keyColumnNames);
             }
         } else if (mappedStatement.getResultSetType() != null) {
+            //select
             return connection.prepareStatement(sql, mappedStatement.getResultSetType().getValue(), ResultSet.CONCUR_READ_ONLY);
         } else {
             return connection.prepareStatement(sql);

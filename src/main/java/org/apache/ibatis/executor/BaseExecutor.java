@@ -44,8 +44,9 @@ import static org.apache.ibatis.executor.ExecutionPlaceholder.EXECUTION_PLACEHOL
  * 1）一级缓存模版方法
  * 2）使用一级缓存处理部分延迟加载相关逻辑，如：
  * 先来的不需要延迟加载的子sql，即立即执行的子sql，执行完后会加入到一级缓存中
- * 后来的相同sql，但是需要延迟加载，发现了一级缓存中已经有该sql的执行结果了。
- * 会在最外层sql执行完毕后，统一将缓存的内容替换为需要延迟加载的位置(见方法：DefaultResultSetHandler.getNestedQueryMappingValue)
+ * 后来的相同sql，但是需要延迟加载，发现了一级缓存中已经有该sql的执行结果了，
+ * 则不延迟加载了，直接将一级缓存中的数据赋值给需要延迟加载对象，如果一级缓存
+ * 中无该sql的结果，则创建ResultLoader进行延迟加载，详见方法：DefaultResultSetHandler.getNestedQueryMappingValue)
  *
  * @author Clinton Begin
  */
@@ -60,7 +61,8 @@ public abstract class BaseExecutor implements Executor {
     protected Executor wrapper;
 
     /**
-     * 延迟加载队列
+     * 一次查询中可能存在多次嵌套查询，当这些嵌套查询sql语句相同且参数相同，则只调用第一次该sql查询，然后将其缓存起来，
+     * 后面的嵌套查询就可以复用前面的缓存值，就不需要再次查询了
      */
     protected ConcurrentLinkedQueue<DeferredLoad> deferredLoads;
     /**
@@ -106,7 +108,7 @@ public abstract class BaseExecutor implements Executor {
     }
 
     /**
-     * 清空所有属性，本类不再可用，并根据参数决定是否回滚
+     * 清空所有属性，本对象不再可用，并根据参数决定是否回滚
      */
     @Override
     public void close(boolean forceRollback) {
@@ -370,7 +372,7 @@ public abstract class BaseExecutor implements Executor {
                 final MetaObject metaCachedParameter = configuration.newMetaObject(cachedParameter);
                 //本次查询的入参
                 final MetaObject metaParameter = configuration.newMetaObject(parameter);
-                //本次查询输入参数中的出参，赋值为上次查询到结果的的入参对应的属性值
+                //上次查询到结果的出参值，赋值到本次查询的对应参数属性值上
                 for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {
                     if (parameterMapping.getMode() != ParameterMode.IN) {
                         final String parameterName = parameterMapping.getProperty();
@@ -396,6 +398,7 @@ public abstract class BaseExecutor implements Executor {
         }
         localCache.putObject(key, list);
         if (ms.getStatementType() == StatementType.CALLABLE) {
+            //如果是存储过程返回值还会被放到请求参数中
             localOutputParameterCache.putObject(key, parameter);
         }
         return list;
@@ -420,7 +423,7 @@ public abstract class BaseExecutor implements Executor {
 
     /**
      * 一次查询中可能存在多次嵌套查询
-     * 当这些嵌套查询sql语句相同且参数相同，则被缓存到
+     * 当这些嵌套查询sql语句相同且参数相同，则被缓存到this.deferredLoads中
      */
     private static class DeferredLoad {
         /**
