@@ -1,0 +1,14 @@
+1难点
+  resultMap嵌套解析
+  泛型类型解析
+  resultSet的解析
+
+2动态sql：根据参数确认的sql，含有${}或者以下标签的statement都是动态sql：
+trim | where | set | foreach | if | choose | when | otherwise | bind
+确定PrepareStatement的sql只差?替换为参数即可，这种可以直接确定为PrepareStatement的sql不是动态sql，
+无法确定为PrepareStatement的sql是动态sql，这些sql由各种片段组成，只有参数确定了才可以确定使用哪个sql分支
+SqlSource相关
+
+3注意resultMap中的association/collection两个属性
+association/collection与join/嵌套子查询
+4看完源码，看看知识点的补充：https://blog.csdn.net/a745233700/article/details/80977133
