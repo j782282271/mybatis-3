@@ -27,3 +27,5 @@ baseExecutor 模版模式
 SqlSession 外观模式
 Executor 策略模式
 动态代理
+工厂模式，例如SqlSessionFactory、ObjectFactory、MapperProxyFactory；
+组合模式，例如SqlNode和各个子类ChooseSqlNode等
