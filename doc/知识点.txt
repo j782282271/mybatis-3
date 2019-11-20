@@ -1,15 +1,29 @@
-1难点
+1）难点
   resultMap嵌套解析
   泛型类型解析
   resultSet的解析
 
-2动态sql：根据参数确认的sql，含有${}或者以下标签的statement都是动态sql：
+2）动态sql：根据参数确认的sql，含有${}或者以下标签的statement都是动态sql：
 trim | where | set | foreach | if | choose | when | otherwise | bind
 确定PrepareStatement的sql只差?替换为参数即可，这种可以直接确定为PrepareStatement的sql不是动态sql，
 无法确定为PrepareStatement的sql是动态sql，这些sql由各种片段组成，只有参数确定了才可以确定使用哪个sql分支
 SqlSource相关
 
-3注意resultMap中的association/collection两个属性
+3）注意resultMap中的association/collection两个属性
 association/collection与join/嵌套子查询
-4看完源码，看看知识点的补充：https://blog.csdn.net/a745233700/article/details/80977133
-5涉及到的设计模式
+4）看完源码，看看知识点的补充：https://blog.csdn.net/a745233700/article/details/80977133
+
+5）#{}和${}的区别是什么？
+#{}是预编译处理，${}是字符串替换。
+Mybatis在处理#{}时，会将sql中的#{}替换为?号，调用PreparedStatement的set方法来赋值；
+Mybatis在处理${}时，就是把${}替换成变量的值。
+使用#{}可以有效的防止SQL注入，提高系统安全性。
+以上为网上说的，下面本人看源码总结的：
+如果一个sql为静态sql（StaticSqlSource）则在初始化statment的时候就将#{}替换为？了
+如果一个sql为动态sql（DynamicSqlSource，含有${} 和where等节点）则在运行时根据请求参数创建sql
+
+6涉及到的设计模式
+baseExecutor 模版模式
+SqlSession 外观模式
+Executor 策略模式
+动态代理
